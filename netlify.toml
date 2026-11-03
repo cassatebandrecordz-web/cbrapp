@@ -1,6 +1,7 @@
 [build]
   command = "npx expo export --platform web"
   publish = "dist"
+  functions = "netlify/functions"
 
 # API backend redirect to Netlify serverless functions
 [[redirects]]
