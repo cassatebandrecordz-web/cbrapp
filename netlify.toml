@@ -2,6 +2,12 @@
   command = "npx expo export --platform web"
   publish = "dist"
 
+# API backend redirect to Netlify serverless functions
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+
 # Single Page Application (SPA) catch-all rewrite for Expo Router deep links
 [[redirects]]
   from = "/*"

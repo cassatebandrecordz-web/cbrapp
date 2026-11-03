@@ -21,6 +21,7 @@ import {
   getCycleRangeLabel,
   WorkingDayOption,
 } from '../../src/utils/dateUtils';
+import { StudioApi } from '../../src/services/api';
 
 export type DayOption = WorkingDayOption;
 
@@ -122,6 +123,24 @@ export default function SlotBookingScreen() {
 
   // Selected Day Object
   const selectedDayObj = workingDays.find((d) => d.id === selectedDayId) || defaultDay;
+
+  // Real-time backend slot synchronization: fetch latest booked slots from server on date change
+  useEffect(() => {
+    let isMounted = true;
+    StudioApi.getSlots(selectedDayObj.fullDate).then((res) => {
+      if (isMounted && res && res.bookedSlots && res.bookedSlots.length > 0) {
+        setBookedSlotsByDate((prev) => ({
+          ...prev,
+          [selectedDayId]: Array.from(new Set([...(prev[selectedDayId] || []), ...res.bookedSlots])),
+        }));
+      }
+    }).catch(() => {
+      // offline fallback
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedDayId, selectedDayObj.fullDate]);
 
   // Selected time slots tracked strictly per date (each date starts with no selected buttons until user selects)
   const [selectedSlotsByDate, setSelectedSlotsByDate] = useState<Record<string, string[]>>({});
@@ -415,6 +434,27 @@ export default function SlotBookingScreen() {
       ...prev,
       [selectedDayId]: [...(prev[selectedDayId] || []), ...selectedSlots],
     }));
+
+    // Post to live backend for permanent multi-device slot locking
+    try {
+      StudioApi.createBooking({
+        serviceId: 'dubbing',
+        serviceName: 'Dubbing Studio',
+        studioName: 'Dubbing Studio (Acoustic Treated)',
+        date: selectedDayObj.fullDate,
+        timeSlots: selectedSlots,
+        timeSlotLabel: formattedTimeSlot,
+        totalPrice: finalTotal,
+        advanceAmount: advanceAmountRequired,
+        paymentMethod: paymentOption === 'advance' ? 'UPI Advance (50%)' : 'Full Payment (UPI)',
+        clientName: user.name,
+        clientPhone: user.phone,
+        clientEmail: user.email,
+        userId: user.id,
+      }).catch((e) => console.log('[API] Backend sync notice:', e));
+    } catch {
+      // Offline graceful fallback
+    }
 
     const booking = confirmBooking();
     router.push({
