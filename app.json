@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "CASSATE BAND RECORDZ",
+    "slug": "cassate-band-recordz",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "cassatebandrecordz",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/images/welcome_poster.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#000000"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.cassatebandrecordz.studio",
+      "adaptiveIcon": {
+        "backgroundColor": "#0A0813",
+        "foregroundImage": "./assets/android-icon-foreground.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "3c2e67ea-d321-47df-aa52-5c0eb2c9b541"
+      }
+    }
+  }
+}
