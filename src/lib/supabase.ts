@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Read credentials from Expo public environment variables
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
+// Read credentials from Expo public environment variables with live Supabase production defaults
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://mcogwiuetrugstrjskjx.supabase.co';
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_iDw739hP677zVWbtzbxSAA_wOfodnKy';
 
 export const isSupabaseConfigured = Boolean(
   supabaseUrl &&
