@@ -82,10 +82,11 @@ export default function ContactStudioScreen() {
       </View>
 
       <ScrollView
+        style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
           isDesktopWeb && styles.desktopScrollContent,
-          { paddingBottom: insets.bottom + 36 },
+          { paddingBottom: insets.bottom + 40 },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -106,7 +107,7 @@ export default function ContactStudioScreen() {
         <View style={styles.sectionHeaderRow}>
           <View style={styles.sectionHeaderPill}>
             <View style={styles.pillIconCircle}>
-              <Ionicons name="call" size={12} color="#000000" />
+              <Ionicons name="call" size={11} color="#000000" />
             </View>
             <Text style={styles.sectionHeaderTitle}>Direct Studio Contact</Text>
           </View>
@@ -117,7 +118,7 @@ export default function ContactStudioScreen() {
           {/* Primary Phone / Reception Desk */}
           <View style={styles.contactItemRow}>
             <View style={[styles.contactIconCircle, { backgroundColor: '#FEF9C3', borderColor: '#FDE047' }]}>
-              <Ionicons name="call" size={18} color="#CA8A04" />
+              <Ionicons name="call" size={16} color="#CA8A04" />
             </View>
             <View style={styles.contactItemContent}>
               <View style={styles.badgeRow}>
@@ -133,7 +134,7 @@ export default function ContactStudioScreen() {
               onPress={() => handleCall('9025253695')}
               activeOpacity={0.8}
             >
-              <Ionicons name="call" size={14} color="#000000" />
+              <Ionicons name="call" size={12} color="#000000" />
               <Text style={styles.actionBtnTextDark}>Call</Text>
             </TouchableOpacity>
           </View>
@@ -143,7 +144,7 @@ export default function ContactStudioScreen() {
           {/* Official WhatsApp */}
           <View style={styles.contactItemRow}>
             <View style={[styles.contactIconCircle, { backgroundColor: '#DCFCE7', borderColor: '#BBF7D0' }]}>
-              <Ionicons name="logo-whatsapp" size={19} color="#16A34A" />
+              <Ionicons name="logo-whatsapp" size={18} color="#16A34A" />
             </View>
             <View style={styles.contactItemContent}>
               <View style={styles.badgeRow}>
@@ -159,7 +160,7 @@ export default function ContactStudioScreen() {
               onPress={() => handleWhatsApp('9025253695')}
               activeOpacity={0.8}
             >
-              <Ionicons name="logo-whatsapp" size={14} color="#FFFFFF" />
+              <Ionicons name="logo-whatsapp" size={13} color="#FFFFFF" />
               <Text style={styles.actionBtnTextWhite}>Chat</Text>
             </TouchableOpacity>
           </View>
@@ -169,18 +170,20 @@ export default function ContactStudioScreen() {
           {/* Booking & Production Email */}
           <View style={styles.contactItemRow}>
             <View style={[styles.contactIconCircle, { backgroundColor: '#E0F2FE', borderColor: '#BAE6FD' }]}>
-              <Ionicons name="mail" size={18} color="#0284C7" />
+              <Ionicons name="mail" size={16} color="#0284C7" />
             </View>
             <View style={styles.contactItemContent}>
               <Text style={styles.contactItemLabel}>Bookings & Ingestion Email</Text>
-              <Text style={[styles.contactItemValue, styles.emailText]}>postproduction@cassatebandrecordz.com</Text>
+              <Text style={[styles.contactItemValue, styles.emailText]} numberOfLines={1} ellipsizeMode="tail">
+                postproduction@cassatebandrecordz.com
+              </Text>
             </View>
             <TouchableOpacity
               style={styles.actionBtnBlue}
               onPress={() => handleEmail('postproduction@cassatebandrecordz.com')}
               activeOpacity={0.8}
             >
-              <Ionicons name="mail-outline" size={14} color="#FFFFFF" />
+              <Ionicons name="mail-outline" size={12} color="#FFFFFF" />
               <Text style={styles.actionBtnTextWhite}>Email</Text>
             </TouchableOpacity>
           </View>
@@ -190,7 +193,7 @@ export default function ContactStudioScreen() {
         <View style={styles.sectionHeaderRow}>
           <View style={styles.sectionHeaderPill}>
             <View style={styles.pillIconCircle}>
-              <Ionicons name="location" size={12} color="#000000" />
+              <Ionicons name="location" size={11} color="#000000" />
             </View>
             <Text style={styles.sectionHeaderTitle}>Studio Address</Text>
           </View>
@@ -200,7 +203,7 @@ export default function ContactStudioScreen() {
         <View style={styles.cardContainer}>
           <View style={styles.addressBox}>
             <View style={[styles.contactIconCircle, { backgroundColor: '#FEF9C3', borderColor: '#FDE047', alignSelf: 'flex-start' }]}>
-              <Ionicons name="business" size={19} color="#CA8A04" />
+              <Ionicons name="business" size={18} color="#CA8A04" />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.addressTitle}>CASSATE BAND RECORDZ</Text>
@@ -215,7 +218,7 @@ export default function ContactStudioScreen() {
         <View style={styles.sectionHeaderRow}>
           <View style={styles.sectionHeaderPill}>
             <View style={styles.pillIconCircle}>
-              <Ionicons name="map" size={12} color="#000000" />
+              <Ionicons name="map" size={11} color="#000000" />
             </View>
             <Text style={styles.sectionHeaderTitle}>Location & Directions</Text>
           </View>
@@ -231,7 +234,6 @@ export default function ContactStudioScreen() {
               end={{ x: 1, y: 1 }}
               style={styles.mapGraphicGradient}
             >
-              {/* Stylized grid pattern */}
               <View style={styles.mapGridLineH1} />
               <View style={styles.mapGridLineH2} />
               <View style={styles.mapGridLineV1} />
@@ -241,11 +243,11 @@ export default function ContactStudioScreen() {
               <View style={styles.mapCenterPinBox}>
                 <View style={styles.pinRadarPulse} />
                 <View style={styles.pinRadarPulseOuter} />
-                <Ionicons name="location" size={38} color="#DC2626" />
+                <Ionicons name="location" size={34} color="#DC2626" />
               </View>
 
               <View style={styles.mapBadgePill}>
-                <Ionicons name="navigate-circle" size={14} color="#CA8A04" />
+                <Ionicons name="navigate-circle" size={13} color="#CA8A04" />
                 <Text style={styles.mapBadgeText}>Palaniappa Nagar, Chennai 600087</Text>
               </View>
             </LinearGradient>
@@ -263,9 +265,9 @@ export default function ContactStudioScreen() {
               end={{ x: 1, y: 0 }}
               style={styles.googleMapsGradient}
             >
-              <Ionicons name="map" size={18} color="#000000" />
+              <Ionicons name="map" size={16} color="#000000" />
               <Text style={styles.googleMapsBtnText}>OPEN IN GOOGLE MAPS</Text>
-              <Ionicons name="arrow-forward" size={16} color="#000000" />
+              <Ionicons name="arrow-forward" size={14} color="#000000" />
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -291,8 +293,9 @@ export default function ContactStudioScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FBFCF8', // Pearl White Canvas
+    backgroundColor: '#FBFCF8',
     alignItems: 'center',
+    width: '100%',
   },
   topHeader: {
     width: '100%',
@@ -300,8 +303,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingBottom: 10,
+    paddingHorizontal: 14,
+    paddingBottom: 8,
     backgroundColor: '#FBFCF8',
     borderBottomWidth: 1,
     borderBottomColor: '#E9EAE5',
@@ -311,9 +314,9 @@ const styles = StyleSheet.create({
     maxWidth: 440,
   },
   backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: '#F3F4F6',
     borderWidth: 1,
     borderColor: '#E5E7EB',
@@ -326,25 +329,31 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: '#111827',
-    fontSize: 15,
-    fontWeight: '800',
-    letterSpacing: 0.2,
+    fontSize: 14.5,
+    fontWeight: '900',
+    letterSpacing: 0.3,
   },
   headerSubtitle: {
     color: '#CA8A04',
-    fontSize: 9.5,
+    fontSize: 9,
     fontWeight: '800',
-    letterSpacing: 0.6,
+    letterSpacing: 0.5,
     marginTop: 1,
   },
   headerRightSpacer: {
-    width: 36,
-    height: 36,
+    width: 34,
+    height: 34,
+  },
+  scrollView: {
+    flex: 1,
+    width: '100%',
   },
   scrollContent: {
     width: '100%',
-    paddingHorizontal: 16,
-    paddingTop: 14,
+    maxWidth: 440,
+    alignSelf: 'center',
+    paddingHorizontal: 14,
+    paddingTop: 10,
   },
   desktopScrollContent: {
     maxWidth: 440,
@@ -354,93 +363,93 @@ const styles = StyleSheet.create({
   // ── 1. Brand Hero Card ──
   brandHeroCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 16,
     borderWidth: 1.5,
     borderColor: '#EAB308',
-    paddingVertical: 20,
-    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: 14,
     shadowColor: '#EAB308',
-    shadowOffset: { width: 0, height: 3 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.16,
-    shadowRadius: 7,
-    elevation: 3,
+    shadowRadius: 5,
+    elevation: 2,
   },
   brandLogoWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
+    marginBottom: 6,
   },
   brandLogoImg: {
-    width: 175,
-    height: 48,
+    width: 145,
+    height: 40,
   },
   brandTagline: {
     color: '#CA8A04',
-    fontSize: 13,
+    fontSize: 11.5,
     fontWeight: '900',
-    letterSpacing: 0.6,
+    letterSpacing: 0.5,
   },
   brandSubline: {
     color: '#6B7280',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
-    marginTop: 3,
+    marginTop: 2,
   },
 
   // ── Section Header Pills ──
   sectionHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
-    marginTop: 4,
+    marginBottom: 8,
+    marginTop: 2,
   },
   sectionHeaderPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
     backgroundColor: '#FEF9C3',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
+    paddingHorizontal: 9,
+    paddingVertical: 3.5,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: '#FDE047',
   },
   pillIconCircle: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+    width: 17,
+    height: 17,
+    borderRadius: 8.5,
     backgroundColor: '#FACC15',
     alignItems: 'center',
     justifyContent: 'center',
   },
   sectionHeaderTitle: {
     color: '#854D0E',
-    fontSize: 11.5,
+    fontSize: 11,
     fontWeight: '800',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
   sectionHeaderLine: {
     flex: 1,
     height: 1,
     backgroundColor: '#E5E7EB',
-    marginLeft: 10,
+    marginLeft: 8,
   },
 
   // ── Generic Card Container ──
   cardContainer: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    padding: 14,
-    marginBottom: 16,
+    padding: 12,
+    marginBottom: 14,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
     elevation: 2,
   },
 
@@ -448,13 +457,13 @@ const styles = StyleSheet.create({
   contactItemRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 4,
+    gap: 10,
+    paddingVertical: 3,
   },
   contactIconCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -465,149 +474,149 @@ const styles = StyleSheet.create({
   badgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
     marginBottom: 2,
   },
   contactItemLabel: {
     color: '#6B7280',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
   },
   primaryBadge: {
     backgroundColor: '#FEF9C3',
     borderWidth: 1,
     borderColor: '#FDE047',
-    paddingHorizontal: 5,
+    paddingHorizontal: 4,
     paddingVertical: 1,
-    borderRadius: 4,
+    borderRadius: 3,
   },
   primaryBadgeText: {
     color: '#854D0E',
-    fontSize: 8.5,
+    fontSize: 7.5,
     fontWeight: '900',
-    letterSpacing: 0.4,
+    letterSpacing: 0.3,
   },
   contactItemValue: {
     color: '#111827',
-    fontSize: 13.5,
+    fontSize: 12.5,
     fontWeight: '800',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
   emailText: {
-    fontSize: 12,
+    fontSize: 10.5,
     fontWeight: '700',
   },
   actionBtnGold: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 4,
     backgroundColor: '#FACC15',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
     shadowColor: '#EAB308',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.25,
     shadowRadius: 2,
     elevation: 1,
   },
   actionBtnGreen: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 4,
     backgroundColor: '#16A34A',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
     shadowColor: '#16A34A',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.25,
     shadowRadius: 2,
     elevation: 1,
   },
   actionBtnBlue: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 4,
     backgroundColor: '#0284C7',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
     shadowColor: '#0284C7',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.25,
     shadowRadius: 2,
     elevation: 1,
   },
   actionBtnTextDark: {
     color: '#000000',
-    fontSize: 11.5,
+    fontSize: 11,
     fontWeight: '800',
   },
   actionBtnTextWhite: {
     color: '#FFFFFF',
-    fontSize: 11.5,
+    fontSize: 11,
     fontWeight: '800',
   },
   itemDivider: {
     height: 1,
     backgroundColor: '#F3F4F6',
-    marginVertical: 10,
+    marginVertical: 8,
   },
 
   // ── Address Card ──
   addressBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 12,
+    gap: 10,
   },
   addressTitle: {
     color: '#111827',
-    fontSize: 13.5,
+    fontSize: 12.5,
     fontWeight: '900',
-    letterSpacing: 0.3,
-    marginBottom: 4,
+    letterSpacing: 0.2,
+    marginBottom: 3,
   },
   addressLinePrimary: {
     color: '#374151',
-    fontSize: 12.5,
+    fontSize: 11.5,
     fontWeight: '700',
-    lineHeight: 18,
+    lineHeight: 16,
   },
   addressLineSecondary: {
     color: '#4B5563',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
-    lineHeight: 17,
+    lineHeight: 15,
   },
 
   // ── Google Map Card ──
   mapCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 1.5,
     borderColor: '#EAB308',
     overflow: 'hidden',
-    marginBottom: 16,
+    marginBottom: 14,
     shadowColor: '#EAB308',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.16,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowRadius: 5,
+    elevation: 2,
   },
   mapGraphicBox: {
     width: '100%',
-    height: 140,
+    height: 120,
     position: 'relative',
   },
   mapGraphicGradient: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
   },
   mapGridLineH1: {
     position: 'absolute',
-    top: 35,
+    top: 30,
     left: 0,
     right: 0,
     height: 1,
@@ -615,7 +624,7 @@ const styles = StyleSheet.create({
   },
   mapGridLineH2: {
     position: 'absolute',
-    bottom: 35,
+    bottom: 30,
     left: 0,
     right: 0,
     height: 1,
@@ -623,7 +632,7 @@ const styles = StyleSheet.create({
   },
   mapGridLineV1: {
     position: 'absolute',
-    left: 60,
+    left: 55,
     top: 0,
     bottom: 0,
     width: 1,
@@ -631,7 +640,7 @@ const styles = StyleSheet.create({
   },
   mapGridLineV2: {
     position: 'absolute',
-    right: 60,
+    right: 55,
     top: 0,
     bottom: 0,
     width: 1,
@@ -641,42 +650,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    marginTop: -8,
+    marginTop: -6,
   },
   pinRadarPulse: {
     position: 'absolute',
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: 'rgba(234, 179, 8, 0.3)',
   },
   pinRadarPulseOuter: {
     position: 'absolute',
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 66,
+    height: 66,
+    borderRadius: 33,
     backgroundColor: 'rgba(234, 179, 8, 0.15)',
   },
   mapBadgePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 4,
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 14,
+    paddingHorizontal: 9,
+    paddingVertical: 3.5,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    marginTop: 6,
+    marginTop: 5,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowRadius: 2,
+    elevation: 1,
   },
   mapBadgeText: {
     color: '#1F2937',
-    fontSize: 10.5,
+    fontSize: 9.5,
     fontWeight: '800',
     letterSpacing: 0.2,
   },
@@ -687,26 +696,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
+    gap: 7,
+    paddingVertical: 12,
   },
   googleMapsBtnText: {
     color: '#000000',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '900',
-    letterSpacing: 0.6,
+    letterSpacing: 0.5,
   },
 
   // ── Working Hours ──
   hoursRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
   },
   hoursIconBox: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: '#FEF9C3',
     borderWidth: 1,
     borderColor: '#FDE047',
@@ -715,14 +724,14 @@ const styles = StyleSheet.create({
   },
   hoursTitle: {
     color: '#111827',
-    fontSize: 12.5,
+    fontSize: 12,
     fontWeight: '800',
     marginBottom: 2,
   },
   hoursDetail: {
     color: '#4B5563',
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '600',
-    lineHeight: 16,
+    lineHeight: 15,
   },
 });

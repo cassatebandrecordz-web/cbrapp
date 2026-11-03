@@ -291,13 +291,13 @@ export default function HomeScreen() {
       <StatusBar style="dark" />
 
       {/* ── Top Header Bar (Pearl White & Gold) ── */}
-      <View style={[styles.topHeader, { paddingTop: Math.max(insets.top, 6) }]}>
+      <View style={[styles.topHeader, { paddingTop: Math.max(insets.top, 8) }]}>
         <TouchableOpacity
           style={styles.headerIconBtn}
           onPress={() => router.push('/(tabs)/profile')}
           activeOpacity={0.7}
         >
-          <Ionicons name="menu" size={17} color="#111827" />
+          <Ionicons name="menu" size={19} color="#111827" />
         </TouchableOpacity>
 
         {/* Cassate Band Recordz Gold Logo */}
@@ -314,16 +314,17 @@ export default function HomeScreen() {
           onPress={() => router.push('/notifications')}
           activeOpacity={0.7}
         >
-          <Ionicons name="notifications-outline" size={16} color="#111827" />
+          <Ionicons name="notifications-outline" size={18} color="#111827" />
           <View style={styles.notifBadgeDot} />
         </TouchableOpacity>
       </View>
 
       <ScrollView
+        style={{ flex: 1, width: '100%' }}
         contentContainerStyle={[
           styles.scrollContent,
           isDesktopWeb && styles.desktopScrollContent,
-          { paddingBottom: Math.max(insets.bottom, 4) + 6 },
+          { paddingBottom: Math.max(insets.bottom, 12) + 70 },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -334,7 +335,7 @@ export default function HomeScreen() {
               <ImageBackground
                 source={activeSlide.image}
                 style={styles.bannerBgImage}
-                imageStyle={{ borderRadius: 12 }}
+                imageStyle={{ borderRadius: 14 }}
                 resizeMode="cover"
               >
                 <LinearGradient
@@ -354,7 +355,7 @@ export default function HomeScreen() {
                       <Text style={styles.ribbonBadgeText}>{activeSlide.badge}</Text>
                     </View>
 
-                    {/* Heading on single line / tight wrap */}
+                    {/* Heading */}
                     <View style={styles.bannerTitleRow}>
                       <Text style={styles.bannerTitleWhite}>{activeSlide.titleWhite} </Text>
                       <Text style={styles.bannerTitleGold}>{activeSlide.titleGold}</Text>
@@ -415,7 +416,7 @@ export default function HomeScreen() {
           <View style={styles.sectionHeaderRow}>
             <View style={styles.sectionHeaderPill}>
               <View style={styles.pillIconCircle}>
-                <Ionicons name="headset" size={9} color="#000000" />
+                <Ionicons name="headset" size={11} color="#000000" />
               </View>
               <Text style={styles.sectionHeaderTitle}>Audio Services</Text>
             </View>
@@ -440,7 +441,7 @@ export default function HomeScreen() {
                   activeOpacity={0.75}
                 >
                   <View style={[styles.cardIconBox, isDubbing && styles.cardIconBoxDubbing]}>
-                    <Ionicons name={svc.icon} size={13} color={isDubbing ? '#854D0E' : '#CA8A04'} />
+                    <Ionicons name={svc.icon} size={17} color={isDubbing ? '#854D0E' : '#CA8A04'} />
                   </View>
 
                   <View style={styles.cardTitleBox}>
@@ -474,7 +475,7 @@ export default function HomeScreen() {
           <View style={styles.sectionHeaderRow}>
             <View style={styles.sectionHeaderPill}>
               <View style={styles.pillIconCircle}>
-                <Ionicons name="videocam" size={9} color="#000000" />
+                <Ionicons name="videocam" size={11} color="#000000" />
               </View>
               <Text style={styles.sectionHeaderTitle}>Video Services</Text>
             </View>
@@ -498,7 +499,7 @@ export default function HomeScreen() {
                   activeOpacity={0.75}
                 >
                   <View style={styles.cardIconBox}>
-                    <Ionicons name={svc.icon} size={13} color="#CA8A04" />
+                    <Ionicons name={svc.icon} size={17} color="#CA8A04" />
                   </View>
 
                   <View style={styles.cardTitleBox}>
@@ -525,7 +526,7 @@ export default function HomeScreen() {
           <View style={styles.sectionHeaderRow}>
             <View style={styles.sectionHeaderPill}>
               <View style={styles.pillIconCircle}>
-                <Ionicons name="layers" size={9} color="#000000" />
+                <Ionicons name="layers" size={11} color="#000000" />
               </View>
               <Text style={styles.sectionHeaderTitle}>Additional Services</Text>
             </View>
@@ -549,7 +550,7 @@ export default function HomeScreen() {
                   activeOpacity={0.75}
                 >
                   <View style={styles.cardIconBox}>
-                    <Ionicons name={svc.icon} size={13} color="#CA8A04" />
+                    <Ionicons name={svc.icon} size={17} color="#CA8A04" />
                   </View>
 
                   <View style={styles.cardTitleBox}>
@@ -586,8 +587,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingBottom: 4,
+    paddingHorizontal: 14,
+    paddingBottom: 6,
     backgroundColor: '#FBFCF8',
     borderBottomWidth: 1,
     borderBottomColor: '#E9EAE5',
@@ -599,13 +600,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerLogoImg: {
-    width: 110,
-    height: 30,
+    width: 125,
+    height: 34,
   },
   headerIconBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: '#F3F4F6',
     borderWidth: 1,
     borderColor: '#E5E7EB',
@@ -615,18 +616,18 @@ const styles = StyleSheet.create({
   },
   notifBadgeDot: {
     position: 'absolute',
-    top: 5,
-    right: 6,
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
+    top: 6,
+    right: 7,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: '#EAB308',
   },
   scrollContent: {
     width: '100%',
     maxWidth: 440,
-    paddingHorizontal: 12,
-    paddingTop: 4,
+    paddingHorizontal: 14,
+    paddingTop: 8,
   },
   desktopScrollContent: {
     width: 440,
@@ -635,19 +636,19 @@ const styles = StyleSheet.create({
 
   // ── Banner Styles ──
   bannerOuterWrapper: {
-    marginBottom: 4,
+    marginBottom: 6,
   },
   bannerContainer: {
-    height: 82,
-    borderRadius: 12,
-    borderWidth: 1,
+    height: 132,
+    borderRadius: 14,
+    borderWidth: 1.5,
     borderColor: '#EAB308',
     backgroundColor: '#111827',
     shadowColor: '#EAB308',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    elevation: 3,
     overflow: 'hidden',
   },
   bannerAnimatedView: {
@@ -660,19 +661,19 @@ const styles = StyleSheet.create({
   },
   bannerGradient: {
     flex: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     justifyContent: 'center',
   },
   bannerContentCol: {
-    width: '90%',
+    width: '92%',
     alignItems: 'flex-start',
   },
   ribbonBadge: {
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    borderRadius: 3,
-    marginBottom: 1,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginBottom: 4,
   },
   ribbonBadgeLive: {
     backgroundColor: '#FACC15',
@@ -682,9 +683,9 @@ const styles = StyleSheet.create({
   },
   ribbonBadgeText: {
     color: '#000000',
-    fontSize: 6.5,
+    fontSize: 8,
     fontWeight: '900',
-    letterSpacing: 0.2,
+    letterSpacing: 0.3,
   },
   bannerTitleRow: {
     flexDirection: 'row',
@@ -693,100 +694,100 @@ const styles = StyleSheet.create({
   },
   bannerTitleWhite: {
     color: '#FFFFFF',
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: '900',
-    lineHeight: 13,
+    lineHeight: 18,
   },
   bannerTitleGold: {
     color: '#FACC15',
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: '900',
     fontStyle: 'italic',
-    lineHeight: 13,
+    lineHeight: 18,
   },
   bannerSubtitle: {
     color: '#D1D5DB',
-    fontSize: 7.5,
-    lineHeight: 9.5,
-    marginTop: 0.5,
-    marginBottom: 2.5,
+    fontSize: 10,
+    lineHeight: 13,
+    marginTop: 2,
+    marginBottom: 6,
   },
   bannerCtaBtn: {
     backgroundColor: '#FACC15',
-    paddingHorizontal: 7,
-    paddingVertical: 2.5,
-    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 12,
     shadowColor: '#FACC15',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.25,
-    shadowRadius: 2,
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
     elevation: 2,
   },
   bannerCtaBtnText: {
     color: '#000000',
-    fontSize: 7.5,
+    fontSize: 9.5,
     fontWeight: '900',
-    letterSpacing: 0.2,
+    letterSpacing: 0.3,
   },
   dotsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 3.5,
-    marginTop: 2,
-    marginBottom: 1,
+    gap: 4,
+    marginTop: 5,
+    marginBottom: 2,
   },
   dot: {
-    height: 2.5,
-    borderRadius: 1.25,
+    height: 3,
+    borderRadius: 1.5,
   },
   dotActive: {
-    width: 8,
+    width: 12,
     backgroundColor: '#EAB308',
   },
   dotInactive: {
-    width: 3.5,
+    width: 4,
     backgroundColor: '#D1D5DB',
   },
 
   // ── Section Headers (Minimal White & Gold) ──
   sectionBlock: {
-    marginTop: 2,
-    marginBottom: 1,
+    marginTop: 8,
+    marginBottom: 4,
   },
   sectionHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 3,
+    marginBottom: 6,
   },
   sectionHeaderPill: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: '#EAB308',
-    paddingLeft: 3,
-    paddingRight: 7,
-    paddingVertical: 1,
-    gap: 4,
+    paddingLeft: 4,
+    paddingRight: 9,
+    paddingVertical: 2.5,
+    gap: 5,
     shadowColor: '#EAB308',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 1.5,
+    shadowRadius: 2,
     elevation: 1,
   },
   pillIconCircle: {
-    width: 15,
-    height: 15,
-    borderRadius: 7.5,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     backgroundColor: '#FACC15',
     alignItems: 'center',
     justifyContent: 'center',
   },
   sectionHeaderTitle: {
     color: '#111827',
-    fontSize: 9.5,
+    fontSize: 10.5,
     fontWeight: '900',
     letterSpacing: 0.2,
   },
@@ -794,7 +795,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 1.2,
     backgroundColor: '#EAB308',
-    marginLeft: 5,
+    marginLeft: 6,
     borderRadius: 1,
     opacity: 0.7,
   },
@@ -803,19 +804,19 @@ const styles = StyleSheet.create({
   audioCardsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 4,
+    gap: 6,
   },
   videoCardsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 6,
+    gap: 8,
   },
   minimalCard: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    paddingTop: 3.5,
-    paddingBottom: 2.5,
+    borderRadius: 10,
+    paddingTop: 7,
+    paddingBottom: 5,
     paddingHorizontal: 2,
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -823,47 +824,47 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
     elevation: 1,
-    minHeight: 52,
-    maxHeight: 56,
+    minHeight: 80,
+    maxHeight: 84,
   },
   dubbingCard: {
-    borderWidth: 1.2,
+    borderWidth: 1.3,
     borderColor: '#EAB308',
     backgroundColor: '#FFFDF5',
     shadowColor: '#EAB308',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.15,
-    shadowRadius: 3,
+    shadowRadius: 4,
     elevation: 2,
   },
   standardCard: {
     borderColor: '#E5E7EB',
   },
   videoCardSize: {
-    minHeight: 52,
-    maxHeight: 56,
+    minHeight: 80,
+    maxHeight: 84,
   },
   cardPressed: {
     borderColor: '#CA8A04',
     transform: [{ scale: 0.96 }],
   },
   cardIconBox: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: '#FEF9C3',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 1,
+    marginBottom: 3,
   },
   cardIconBoxDubbing: {
     backgroundColor: '#FDE047',
   },
   cardTitleBox: {
-    height: 16,
+    height: 22,
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
@@ -871,38 +872,38 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     color: '#111827',
-    fontSize: 7.2,
+    fontSize: 9.2,
     fontWeight: '800',
     textAlign: 'center',
-    lineHeight: 8,
+    lineHeight: 11,
   },
   cardTitleDubbing: {
     color: '#000000',
     fontWeight: '900',
   },
   cardStatusSlot: {
-    height: 9,
+    height: 12,
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
   },
   dubbingSpacingSlot: {
-    height: 9,
+    height: 12,
   },
   soonPill: {
     backgroundColor: '#FEF3C7',
     borderWidth: 0.6,
     borderColor: '#FDE68A',
-    paddingHorizontal: 2.5,
-    paddingVertical: 0.5,
-    borderRadius: 2,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 3,
     alignItems: 'center',
     justifyContent: 'center',
   },
   soonPillText: {
     color: '#92400E',
-    fontSize: 4.8,
+    fontSize: 5.5,
     fontWeight: '900',
-    letterSpacing: 0.1,
+    letterSpacing: 0.2,
   },
 });

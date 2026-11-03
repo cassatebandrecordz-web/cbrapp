@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, View, Animated } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../../src/constants/theme';
 
 interface AnimatedTabIconProps {
@@ -41,7 +42,7 @@ const AnimatedTabIcon: React.FC<AnimatedTabIconProps> = ({
     <Animated.View style={[styles.iconContainer, { transform: [{ scale: scaleAnim }] }]}>
       <Ionicons
         name={focused ? nameFocused : nameUnfocused}
-        size={20}
+        size={21}
         color={color}
       />
       {focused && (
@@ -52,12 +53,21 @@ const AnimatedTabIcon: React.FC<AnimatedTabIconProps> = ({
 };
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, 8);
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: COLORS.primary,
+        tabBarStyle: [
+          styles.tabBar,
+          {
+            height: 52 + bottomInset,
+            paddingBottom: bottomInset,
+          },
+        ],
+        tabBarActiveTintColor: '#CA8A04',
         tabBarInactiveTintColor: '#6B7280',
         tabBarLabelStyle: styles.tabLabel,
       }}
@@ -129,24 +139,29 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
+    borderTopWidth: 1.5,
     borderTopColor: '#E9EAE5',
-    height: 60,
-    paddingBottom: 6,
     paddingTop: 6,
     maxWidth: 440,
     width: '100%',
     alignSelf: 'center',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 4,
   },
   tabLabel: {
-    fontSize: 10,
-    fontWeight: '700',
+    fontSize: 10.5,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+    marginTop: 2,
   },
   iconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    height: 28,
+    height: 26,
   },
   activeIndicatorDot: {
     position: 'absolute',
@@ -154,6 +169,6 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#CA8A04',
   },
 });
