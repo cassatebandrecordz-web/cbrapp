@@ -91,9 +91,9 @@ export const SupabaseStudioService = {
           time_slots: payload.timeSlots,
           time_slot_label: payload.timeSlotLabel || payload.timeSlots.join(', '),
           total_price: payload.totalPrice,
-          advance_amount: payload.advanceAmount,
-          payment_method: payload.paymentMethod,
-          payment_status: payload.advanceAmount >= payload.totalPrice ? 'PAID_IN_FULL' : 'ADVANCE_PAID',
+          advance_amount: payload.totalPrice, // Full Payment Term
+          payment_method: payload.paymentMethod || 'UPI Full Payment',
+          payment_status: 'PAID_IN_FULL',
           upi_ref_id: payload.upiRefId || `UPI-${Date.now().toString().slice(-8)}`,
           status: 'CONFIRMED',
           client_name: payload.clientName || 'Studio Client',

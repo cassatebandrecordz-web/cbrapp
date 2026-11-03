@@ -447,7 +447,7 @@ export default function SlotBookingScreen() {
       [selectedDayId]: [...(prev[selectedDayId] || []), ...selectedSlots],
     }));
 
-    // Post to live backend for permanent multi-device slot locking
+    // Post to live backend for permanent multi-device slot locking (Full Payment Auto-Booking)
     try {
       StudioApi.createBooking({
         serviceId: 'dubbing',
@@ -455,10 +455,10 @@ export default function SlotBookingScreen() {
         studioName: 'Dubbing Studio (Acoustic Treated)',
         date: selectedDayObj.fullDate,
         timeSlots: selectedSlots,
-        timeSlotLabel: formattedTimeSlot,
-        totalPrice: finalTotal,
-        advanceAmount: advanceAmountRequired,
-        paymentMethod: paymentOption === 'advance' ? 'UPI Advance (50%)' : 'Full Payment (UPI)',
+        timeSlotLabel: formattedSlotsString,
+        totalPrice: totalPrice,
+        advanceAmount: totalPrice,
+        paymentMethod: 'UPI Full Payment',
         clientName: user.name,
         clientPhone: user.phone,
         clientEmail: user.email,
@@ -767,7 +767,7 @@ export default function SlotBookingScreen() {
             </View>
           )}
 
-          {/* ================= STEP 2: SUMMARY & ADVANCE PAYMENT ================= */}
+          {/* ================= STEP 2: SUMMARY & FULL PAYMENT ================= */}
           {step === 2 && (
             <View>
               {/* Service & Studio Header Card */}
