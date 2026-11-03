@@ -4,14 +4,9 @@
     "slug": "cassate-band-recordz",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/cassate_logo.png",
+    "icon": "./assets/icon.png",
     "scheme": "cassatebandrecordz",
     "userInterfaceStyle": "dark",
-    "splash": {
-      "image": "./assets/images/cassate_logo.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0A0813"
-    },
     "ios": {
       "supportsTablet": true
     },
@@ -19,12 +14,7 @@
       "package": "com.cassatebandrecordz.studio",
       "adaptiveIcon": {
         "backgroundColor": "#0A0813",
-        "foregroundImage": "./assets/images/cassate_logo.png"
-      },
-      "splash": {
-        "backgroundColor": "#0A0813",
-        "image": "./assets/images/cassate_logo.png",
-        "resizeMode": "contain"
+        "foregroundImage": "./assets/android-icon-foreground.png"
       },
       "predictiveBackGestureEnabled": false
     },
@@ -33,7 +23,19 @@
       "bundler": "metro"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-audio",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0A0813",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain"
+        }
+      ],
+      "expo-asset"
     ],
     "updates": {
       "url": "https://u.expo.dev/3c2e67ea-d321-47df-aa52-5c0eb2c9b541",

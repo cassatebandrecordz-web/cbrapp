@@ -1,63 +1,66 @@
 import { Platform } from 'react-native';
-import { Audio } from 'expo-av';
 import { SLOT_AUDIO_BASE64 } from '../constants/slotAudioBase64';
 
 /**
  * Universal Sound Effects System for CASSATE BAND RECORDZ
- * Supports Native Android & iOS (via expo-av) + Web (via Web Audio API)
+ * Supports Native Android & iOS (via expo-audio) + Web (via Web Audio API)
  */
+
+let createAudioPlayerFn: any = null;
+if (Platform.OS !== 'web') {
+  try {
+    const expoAudio = require('expo-audio');
+    createAudioPlayerFn = expoAudio.createAudioPlayer;
+  } catch {
+    // Dynamic load fallback
+  }
+}
 
 class SoundEffectManager {
   private ctx: any = null;
   private slotAudioBuffer: any = null;
   private slotAudioElement: any = null;
-  private nativeSound: Audio.Sound | null = null;
+  private nativePlayer: any = null;
   private isNativeAudioReady = false;
 
   constructor() {
     this.initNativeAudio();
   }
 
-  private async initNativeAudio() {
-    if (Platform.OS === 'web') return;
+  private initNativeAudio() {
+    if (Platform.OS === 'web' || !createAudioPlayerFn) return;
     try {
-      await Audio.setAudioModeAsync({
-        playsInSilentModeIOS: true,
-        shouldDuckAndroid: true,
-        staysActiveInBackground: false,
-      });
-
-      // Preload native audio sound
-      const { sound } = await Audio.Sound.createAsync(
-        require('../../assets/sounds/slot_timing_click.mp3'),
-        { shouldPlay: false, volume: 1.0 }
+      this.nativePlayer = createAudioPlayerFn(
+        require('../../assets/sounds/slot_timing_click.mp3')
       );
-      this.nativeSound = sound;
       this.isNativeAudioReady = true;
-    } catch (e) {
-      // Audio permission or silent mode
+    } catch {
+      // Audio setup fallback
     }
   }
 
-  private async playNativeAudio(volume = 0.9) {
+  private playNativeAudio(volume = 0.9) {
     if (Platform.OS === 'web') return false;
     try {
-      if (this.nativeSound) {
-        await this.nativeSound.setPositionAsync(0);
-        await this.nativeSound.setVolumeAsync(volume);
-        await this.nativeSound.playAsync();
-        return true;
-      } else {
-        const { sound } = await Audio.Sound.createAsync(
-          require('../../assets/sounds/slot_timing_click.mp3'),
-          { shouldPlay: true, volume }
+      if (!this.nativePlayer && createAudioPlayerFn) {
+        this.nativePlayer = createAudioPlayerFn(
+          require('../../assets/sounds/slot_timing_click.mp3')
         );
-        this.nativeSound = sound;
+      }
+      if (this.nativePlayer) {
+        this.nativePlayer.volume = volume;
+        if (typeof this.nativePlayer.seekTo === 'function') {
+          this.nativePlayer.seekTo(0).catch(() => {});
+        }
+        if (typeof this.nativePlayer.play === 'function') {
+          this.nativePlayer.play();
+        }
         return true;
       }
     } catch {
       return false;
     }
+    return false;
   }
 
   private getAudioContext(): any {
