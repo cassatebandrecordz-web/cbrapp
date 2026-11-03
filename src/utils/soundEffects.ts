@@ -4,48 +4,31 @@ import { SLOT_AUDIO_BASE64 } from '../constants/slotAudioBase64';
 /**
  * Universal Sound Effects System for CASSATE BAND RECORDZ
  * Supports Native Android & iOS (via expo-audio) + Web (via Web Audio API)
+ * All native audio components are instantiated 100% lazily on user tap
+ * to avoid any native thread blocking or startup crashes.
  */
-
-let createAudioPlayerFn: any = null;
-if (Platform.OS !== 'web') {
-  try {
-    const expoAudio = require('expo-audio');
-    createAudioPlayerFn = expoAudio.createAudioPlayer;
-  } catch {
-    // Dynamic load fallback
-  }
-}
 
 class SoundEffectManager {
   private ctx: any = null;
   private slotAudioBuffer: any = null;
   private slotAudioElement: any = null;
   private nativePlayer: any = null;
-  private isNativeAudioReady = false;
 
   constructor() {
-    this.initNativeAudio();
+    // Zero initialization in constructor to ensure 100% safe app launch
   }
 
-  private initNativeAudio() {
-    if (Platform.OS === 'web' || !createAudioPlayerFn) return;
-    try {
-      this.nativePlayer = createAudioPlayerFn(
-        require('../../assets/sounds/slot_timing_click.mp3')
-      );
-      this.isNativeAudioReady = true;
-    } catch {
-      // Audio setup fallback
-    }
-  }
-
-  private playNativeAudio(volume = 0.9) {
+  private playNativeAudio(volume = 0.9): boolean {
     if (Platform.OS === 'web') return false;
     try {
-      if (!this.nativePlayer && createAudioPlayerFn) {
-        this.nativePlayer = createAudioPlayerFn(
-          require('../../assets/sounds/slot_timing_click.mp3')
-        );
+      if (!this.nativePlayer) {
+        // Dynamically require expo-audio only on user action
+        const expoAudio = require('expo-audio');
+        if (expoAudio && typeof expoAudio.createAudioPlayer === 'function') {
+          this.nativePlayer = expoAudio.createAudioPlayer(
+            require('../../assets/sounds/slot_timing_click.mp3')
+          );
+        }
       }
       if (this.nativePlayer) {
         this.nativePlayer.volume = volume;
@@ -58,6 +41,7 @@ class SoundEffectManager {
         return true;
       }
     } catch {
+      // Graceful audio fallback - never throw or crash the UI
       return false;
     }
     return false;
@@ -236,29 +220,7 @@ class SoundEffectManager {
    * Preload Slot Sound
    */
   public preloadSlotSound() {
-    if (Platform.OS !== 'web') {
-      this.initNativeAudio();
-      return;
-    }
-
-    try {
-      if (!this.slotAudioElement && typeof Audio !== 'undefined') {
-        this.slotAudioElement = new (window as any).Audio(SLOT_AUDIO_BASE64);
-        this.slotAudioElement.preload = 'auto';
-      }
-      const ctx = this.getAudioContext();
-      if (ctx && !this.slotAudioBuffer && typeof fetch !== 'undefined') {
-        fetch(SLOT_AUDIO_BASE64)
-          .then((res) => res.arrayBuffer())
-          .then((buf) => ctx.decodeAudioData(buf))
-          .then((decoded) => {
-            this.slotAudioBuffer = decoded;
-          })
-          .catch(() => {});
-      }
-    } catch {
-      // Ignore
-    }
+    // No-op during boot for maximum startup speed
   }
 
   /**
