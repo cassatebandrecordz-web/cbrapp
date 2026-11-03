@@ -1,4 +1,6 @@
 import { Platform } from 'react-native';
+import { isSupabaseConfigured } from '../lib/supabase';
+import { SupabaseStudioService } from './supabaseService';
 
 // Detect API base URL:
 // In production on web: uses same origin (e.g. https://venerable-marigold-a035e7.netlify.app)
@@ -6,14 +8,12 @@ import { Platform } from 'react-native';
 const getApiBaseUrl = (): string => {
   if (Platform.OS === 'web') {
     if (typeof window !== 'undefined' && window.location?.origin) {
-      // If running on local port 8085 or 8081, route to local server port 5001
       if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
         return 'http://localhost:5001/api';
       }
       return `${window.location.origin}/api`;
     }
   }
-  // Native mobile / fallback
   return 'http://localhost:5001/api';
 };
 
@@ -57,6 +57,7 @@ export const StudioApi = {
    * Health check
    */
   async checkHealth(): Promise<boolean> {
+    if (isSupabaseConfigured) return true;
     try {
       const res = await fetch(`${API_BASE}/health`);
       return res.ok;
@@ -69,12 +70,25 @@ export const StudioApi = {
    * Fetch slot availability for a specific date in real-time
    */
   async getSlots(date: string): Promise<SlotAvailabilityResponse> {
+    // 1. Supabase priority if configured
+    if (isSupabaseConfigured) {
+      const bookedFromSupabase = await SupabaseStudioService.getBookedSlots(date);
+      return {
+        date,
+        bookedSlots: bookedFromSupabase,
+        lockedSlots: [],
+        permanentlyLocked: ['09:00 AM', '10:00 AM'],
+        lunchBreak: '01:00 PM',
+        fastBooking: ['02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM', '06:00 PM'],
+      };
+    }
+
+    // 2. Netlify serverless / local backend fallback
     try {
       const res = await fetch(`${API_BASE}/slots?date=${encodeURIComponent(date)}`);
       if (!res.ok) throw new Error('Failed to fetch slot status');
       return await res.json();
-    } catch (err) {
-      // Graceful fallback for offline / disconnected
+    } catch {
       return {
         date,
         bookedSlots: [],
@@ -84,6 +98,16 @@ export const StudioApi = {
         fastBooking: ['02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM', '06:00 PM'],
       };
     }
+  },
+
+  /**
+   * Real-time slot listener (WebSockets via Supabase)
+   */
+  subscribeToDateSlots(date: string, callback: (bookedSlots: string[]) => void) {
+    if (isSupabaseConfigured) {
+      return SupabaseStudioService.subscribeToSlots(date, callback);
+    }
+    return () => {};
   },
 
   /**
@@ -98,7 +122,7 @@ export const StudioApi = {
       });
       return res.ok;
     } catch {
-      return true; // continue gracefully
+      return true;
     }
   },
 
@@ -106,6 +130,13 @@ export const StudioApi = {
    * Create confirmed booking and permanently lock slots
    */
   async createBooking(payload: CreateBookingPayload): Promise<BookingResponse> {
+    // 1. Supabase priority
+    if (isSupabaseConfigured) {
+      const result = await SupabaseStudioService.createBooking(payload);
+      if (result.success) return result;
+    }
+
+    // 2. Netlify serverless API fallback
     try {
       const res = await fetch(`${API_BASE}/bookings`, {
         method: 'POST',
@@ -117,8 +148,7 @@ export const StudioApi = {
         return { success: false, error: data.error || 'Failed to confirm booking' };
       }
       return data;
-    } catch (err: any) {
-      // Local fallback simulation if backend is unreachable
+    } catch {
       const fallbackId = `CB-${Math.floor(1000 + Math.random() * 9000)}`;
       return {
         success: true,
@@ -135,7 +165,12 @@ export const StudioApi = {
   /**
    * Fetch user's booking history
    */
-  async getBookings(userId: string): Promise<any[]> {
+  async getBookings(userId: string, email?: string): Promise<any[]> {
+    if (isSupabaseConfigured) {
+      const list = await SupabaseStudioService.getUserBookings(email);
+      if (list && list.length > 0) return list;
+    }
+
     try {
       const res = await fetch(`${API_BASE}/bookings?userId=${encodeURIComponent(userId)}`);
       if (!res.ok) throw new Error('Failed to fetch bookings');
@@ -149,7 +184,11 @@ export const StudioApi = {
   /**
    * Cancel booking
    */
-  async cancelBooking(bookingId: string): Promise<boolean> {
+  async cancelBooking(bookingId: string, date?: string, slots?: string[]): Promise<boolean> {
+    if (isSupabaseConfigured && date && slots) {
+      return await SupabaseStudioService.cancelBooking(bookingId, date, slots);
+    }
+
     try {
       const res = await fetch(`${API_BASE}/bookings/cancel`, {
         method: 'POST',

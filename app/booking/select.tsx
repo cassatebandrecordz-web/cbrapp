@@ -137,8 +137,20 @@ export default function SlotBookingScreen() {
     }).catch(() => {
       // offline fallback
     });
+
+    // Real-time WebSocket subscription (updates screen instantly when another client books)
+    const unsubscribe = StudioApi.subscribeToDateSlots(selectedDayObj.fullDate, (latestBooked) => {
+      if (isMounted && latestBooked && latestBooked.length > 0) {
+        setBookedSlotsByDate((prev) => ({
+          ...prev,
+          [selectedDayId]: Array.from(new Set([...(prev[selectedDayId] || []), ...latestBooked])),
+        }));
+      }
+    });
+
     return () => {
       isMounted = false;
+      if (typeof unsubscribe === 'function') unsubscribe();
     };
   }, [selectedDayId, selectedDayObj.fullDate]);
 
