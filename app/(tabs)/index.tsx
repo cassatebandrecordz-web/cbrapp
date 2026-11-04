@@ -324,7 +324,7 @@ export default function HomeScreen() {
         contentContainerStyle={[
           styles.scrollContent,
           isDesktopWeb && styles.desktopScrollContent,
-          { paddingBottom: Math.max(insets.bottom, 24) + 90 },
+          { paddingBottom: Math.max(insets.bottom, 24) + 32 },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -573,54 +573,6 @@ export default function HomeScreen() {
             })}
           </View>
         </View>
-
-        {/* ── 5. Studio Direct Support & Quick Access Card (Fills 360x800 Screen Gracefully) ── */}
-        <View style={styles.supportCard}>
-          <View style={styles.supportHeaderRow}>
-            <View style={styles.supportBadge}>
-              <Ionicons name="sparkles" size={10} color="#854D0E" />
-              <Text style={styles.supportBadgeText}>PREMIUM POST-PRODUCTION</Text>
-            </View>
-          </View>
-          <Text style={styles.supportTitle}>Custom Projects & Dolby Mixing</Text>
-          <Text style={styles.supportSubtitle}>
-            Acoustically treated dubbing suite, 5.1 & 7.1 surround mixing, and film finishing in Chennai.
-          </Text>
-          <View style={styles.supportBtnRow}>
-            <TouchableOpacity
-              style={styles.supportBookingBtn}
-              onPress={handleBookDubbing}
-              activeOpacity={0.82}
-            >
-              <Ionicons name="mic" size={12} color="#000000" />
-              <Text style={styles.supportBookingBtnText}>Book Dubbing</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.supportContactBtn}
-              onPress={() => {
-                soundEffects.playClick(850, 0.03);
-                router.push('/contact');
-              }}
-              activeOpacity={0.82}
-            >
-              <Ionicons name="call" size={12} color="#1F2937" />
-              <Text style={styles.supportContactBtnText}>Contact</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.supportPassBtn}
-              onPress={() => {
-                soundEffects.playClick(850, 0.03);
-                router.push('/(tabs)/booking');
-              }}
-              activeOpacity={0.82}
-            >
-              <Ionicons name="ticket-outline" size={12} color="#1F2937" />
-              <Text style={styles.supportPassBtnText}>Passes</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
       </ScrollView>
     </View>
   );
@@ -803,8 +755,8 @@ const styles = StyleSheet.create({
 
   // ── Section Headers (Minimal White & Gold) ──
   sectionBlock: {
-    marginTop: 8,
-    marginBottom: 4,
+    marginTop: 10,
+    marginBottom: 6,
   },
   sectionHeaderRow: {
     flexDirection: 'row',
@@ -878,7 +830,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 3,
     elevation: 1,
-    minHeight: 84,
+    height: 88,
+    minHeight: 88,
     maxHeight: 88,
   },
   dubbingCard: {
@@ -895,7 +848,8 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
   },
   videoCardSize: {
-    minHeight: 84,
+    height: 88,
+    minHeight: 88,
     maxHeight: 88,
   },
   cardPressed: {
@@ -915,7 +869,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FDE047',
   },
   cardTitleBox: {
-    height: 22,
+    height: 24,
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
@@ -926,14 +880,14 @@ const styles = StyleSheet.create({
     fontSize: 9.2,
     fontWeight: '800',
     textAlign: 'center',
-    lineHeight: 11,
+    lineHeight: 11.5,
   },
   cardTitleDubbing: {
     color: '#000000',
     fontWeight: '900',
   },
   cardStatusSlot: {
-    height: 12,
+    height: 14,
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
@@ -976,114 +930,5 @@ const styles = StyleSheet.create({
     fontSize: 5.5,
     fontWeight: '900',
     letterSpacing: 0.2,
-  },
-
-  // ── 5. Studio Direct Support & Quick Access Card ──
-  supportCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    padding: 12,
-    marginTop: 10,
-    marginBottom: 16,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  supportHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  supportBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#FEF9C3',
-    paddingHorizontal: 7,
-    paddingVertical: 2.5,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#FDE047',
-  },
-  supportBadgeText: {
-    color: '#854D0E',
-    fontSize: 8,
-    fontWeight: '900',
-    letterSpacing: 0.4,
-  },
-  supportTitle: {
-    color: '#111827',
-    fontSize: 12.5,
-    fontWeight: '800',
-    letterSpacing: 0.2,
-    marginBottom: 2,
-  },
-  supportSubtitle: {
-    color: '#6B7280',
-    fontSize: 10,
-    lineHeight: 14,
-    marginBottom: 10,
-  },
-  supportBtnRow: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  supportBookingBtn: {
-    flex: 1.25,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    backgroundColor: '#FACC15',
-    paddingVertical: 8,
-    borderRadius: 8,
-    shadowColor: '#EAB308',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.25,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  supportBookingBtnText: {
-    color: '#000000',
-    fontSize: 10.5,
-    fontWeight: '900',
-  },
-  supportContactBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    backgroundColor: '#F3F4F6',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  supportContactBtnText: {
-    color: '#1F2937',
-    fontSize: 10.5,
-    fontWeight: '800',
-  },
-  supportPassBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    backgroundColor: '#F3F4F6',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  supportPassBtnText: {
-    color: '#1F2937',
-    fontSize: 10.5,
-    fontWeight: '800',
   },
 });
