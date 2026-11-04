@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { LinearGradient } from 'expo-linear-gradient';
 import { soundEffects } from '../src/utils/soundEffects';
 
 export default function GetStartedScreen() {
@@ -24,13 +25,26 @@ export default function GetStartedScreen() {
     router.replace('/(tabs)');
   };
 
-  // On wide desktop screens, constrain to exact same mobile width (440px) as Home page; on mobile, fill full screen
-  const isDesktopWeb = Platform.OS === 'web' && width > 460;
-  const containerWidth = isDesktopWeb ? Math.min(440, height * (577 / 1024)) : '100%';
+  // Poster natural aspect ratio: 577 / 1024 (~0.563)
+  const POSTER_RATIO = 577 / 1024;
+  const isDesktopWeb = Platform.OS === 'web' && width > 500;
+
+  // On wide PC / desktop screens, size container proportionally to window height; on mobile, fill full viewport
+  const containerWidth = isDesktopWeb
+    ? Math.min(480, Math.round(height * POSTER_RATIO))
+    : '100%';
 
   return (
     <View style={styles.outerContainer}>
       <StatusBar style="light" />
+
+      {/* Luxury Studio Ambient Gradient Backdrop */}
+      <LinearGradient
+        colors={['#05040A', '#140F04', '#05040A']}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        style={StyleSheet.absoluteFillObject}
+      />
 
       {/* Immediate Brand Fallback while background poster loads */}
       {!imageLoaded && (
@@ -45,9 +59,11 @@ export default function GetStartedScreen() {
         </View>
       )}
 
+      {/* Main Banner Container */}
       <View
         style={[
           styles.posterContainer,
+          isDesktopWeb && styles.desktopPosterContainer,
           {
             width: containerWidth,
             height: '100%',
@@ -57,25 +73,19 @@ export default function GetStartedScreen() {
         <ImageBackground
           source={require('../assets/images/welcome_poster.png')}
           style={styles.posterImage}
-          resizeMode="cover"
+          resizeMode="contain"
           onLoad={() => setImageLoaded(true)}
         >
-          {/* Entire poster can be tapped to enter app */}
+          {/* Entire professional banner is an interactive touch surface to enter studio */}
           <TouchableOpacity
             style={styles.fullScreenTouch}
             onPress={handleEnterApp}
-            activeOpacity={0.9}
+            activeOpacity={0.96}
+            accessibilityRole="button"
+            accessibilityLabel="Get Started - Enter Cassate Band Recordz"
           >
-            {/* Direct golden CTA button at the bottom */}
-            <View style={styles.buttonOverlay}>
-              <TouchableOpacity
-                style={styles.enterButton}
-                onPress={handleEnterApp}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.enterButtonText}>ENTER STUDIO ➔</Text>
-              </TouchableOpacity>
-            </View>
+            {/* Bottom hotspot matching the Get Started button area on the banner */}
+            <View style={styles.getStartedHotspot} />
           </TouchableOpacity>
         </ImageBackground>
       </View>
@@ -86,70 +96,66 @@ export default function GetStartedScreen() {
 const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
-    backgroundColor: '#0A0813',
+    backgroundColor: '#05040A',
     alignItems: 'center',
     justifyContent: 'center',
+    width: '100%',
+    height: '100%',
   },
   loadingFallback: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#0A0813',
+    backgroundColor: '#05040A',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 1,
+    zIndex: 2,
   },
   fallbackLogo: {
-    width: 200,
-    height: 70,
+    width: 210,
+    height: 72,
   },
   fallbackText: {
     color: '#D1D5DB',
     fontSize: 13,
     fontWeight: '700',
-    marginTop: 14,
+    marginTop: 16,
     letterSpacing: 0.5,
   },
   posterContainer: {
     overflow: 'hidden',
     position: 'relative',
-    backgroundColor: '#0A0813',
-    maxWidth: 440,
+    backgroundColor: '#05040A',
     width: '100%',
+    height: '100%',
     alignSelf: 'center',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  desktopPosterContainer: {
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(234, 179, 8, 0.25)',
+    shadowColor: '#EAB308',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 18,
+    elevation: 8,
   },
   posterImage: {
     width: '100%',
     height: '100%',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
   },
   fullScreenTouch: {
     flex: 1,
     width: '100%',
     height: '100%',
     justifyContent: 'flex-end',
-  },
-  buttonOverlay: {
-    width: '85%',
-    alignSelf: 'center',
-    marginBottom: Platform.OS === 'android' ? 44 : 36,
-  },
-  enterButton: {
-    backgroundColor: '#FACC15',
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 30,
     alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#EAB308',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 4,
-    borderWidth: 1.5,
-    borderColor: '#FFFFFF',
   },
-  enterButtonText: {
-    color: '#000000',
-    fontSize: 14,
-    fontWeight: '900',
-    letterSpacing: 0.8,
+  getStartedHotspot: {
+    width: '84%',
+    height: 54,
+    marginBottom: Platform.OS === 'android' ? 36 : 28,
   },
 });
