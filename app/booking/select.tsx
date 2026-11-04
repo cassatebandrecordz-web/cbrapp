@@ -348,7 +348,7 @@ export default function SlotBookingScreen() {
     }
   };
 
-  const [hasAgreedTerms, setHasAgreedTerms] = useState<boolean>(true);
+  const [hasAgreedTerms, setHasAgreedTerms] = useState<boolean>(false);
   const [showQrCode, setShowQrCode] = useState<boolean>(false);
   const [copiedUpi, setCopiedUpi] = useState<boolean>(false);
 
@@ -434,7 +434,12 @@ export default function SlotBookingScreen() {
   const handleFinalPayment = () => {
     try {
       if (!hasAgreedTerms) {
-        setHasAgreedTerms(true);
+        Alert.alert(
+          'Studio Terms & Disclaimer Required',
+          'Please read the Studio Disclaimer & Terms above and manually check the agreement box before proceeding with payment.',
+          [{ text: 'OK' }]
+        );
+        return;
       }
 
       setBookedSlotsByDate((prev) => ({
@@ -1054,22 +1059,36 @@ export default function SlotBookingScreen() {
                 )}
 
                 {/* Confirm Paid Button */}
+                {!hasAgreedTerms && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 10, paddingHorizontal: 4 }}>
+                    <Ionicons name="information-circle-outline" size={16} color="#F59E0B" />
+                    <Text style={{ color: '#D97706', fontSize: 11, fontWeight: '700' }}>
+                      Please check the Studio Terms box above to proceed
+                    </Text>
+                  </View>
+                )}
+
                 <TouchableOpacity
                   style={[
                     styles.payBtn,
-                    { marginTop: 12, backgroundColor: '#059669' },
+                    {
+                      marginTop: hasAgreedTerms ? 12 : 8,
+                      backgroundColor: hasAgreedTerms ? '#059669' : '#6B7280',
+                    },
                   ]}
                   onPress={handleFinalPayment}
                   activeOpacity={0.85}
                 >
                   <View style={styles.payBtnContent}>
                     <Ionicons
-                      name="checkmark-circle"
+                      name={hasAgreedTerms ? "checkmark-circle" : "checkbox-outline"}
                       size={18}
                       color="#FFFFFF"
                     />
                     <Text style={styles.payBtnText}>
-                      I Have Paid ₹{totalPrice.toLocaleString('en-IN')} • Get Pass →
+                      {hasAgreedTerms
+                        ? `I Have Paid ₹${totalPrice.toLocaleString('en-IN')} • Get Pass →`
+                        : `Check Terms & Confirm Payment`}
                     </Text>
                   </View>
                 </TouchableOpacity>

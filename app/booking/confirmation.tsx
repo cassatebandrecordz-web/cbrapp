@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Linking, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,12 +18,67 @@ export default function BookingConfirmationScreen() {
 
   const booking = bookings.find((b) => b.id === bookingId) || bookings[0];
 
-  const handleAddToCalendar = () => {
-    Alert.alert(
-      'Calendar Event Added (Demo)',
-      `Session for ${booking?.serviceName} on ${booking?.date} has been added to your local demo schedule.`,
-      [{ text: 'OK' }]
-    );
+  const handleAddToCalendar = async () => {
+    try {
+      const serviceName = booking?.serviceName || 'Studio Session';
+      const studioName = booking?.studioName || 'Dubbing Suite';
+      const refCode = booking?.referenceCode || code || 'CBR-PASS';
+      const dateStr = booking?.date || '';
+      const timeStr = booking?.timeSlot || '';
+
+      // Parse date into Year, Month, Day
+      let year = new Date().getFullYear();
+      let month = new Date().getMonth() + 1;
+      let day = new Date().getDate();
+
+      if (dateStr) {
+        const match = dateStr.match(/(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+        if (match) {
+          year = parseInt(match[1]);
+          month = parseInt(match[2]);
+          day = parseInt(match[3]);
+        }
+      }
+
+      // Parse time into Start Hour and Minute
+      let startHour = 10;
+      let startMin = 0;
+      if (timeStr) {
+        const timeMatch = timeStr.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)/i);
+        if (timeMatch) {
+          startHour = parseInt(timeMatch[1]);
+          if (timeMatch[3].toUpperCase() === 'PM' && startHour < 12) startHour += 12;
+          if (timeMatch[3].toUpperCase() === 'AM' && startHour === 12) startHour = 0;
+          startMin = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
+        }
+      }
+
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const endHour = (startHour + 2) % 24;
+      const startIso = `${year}${pad(month)}${pad(day)}T${pad(startHour)}${pad(startMin)}00`;
+      const endIso = `${year}${pad(month)}${pad(day)}T${pad(endHour)}${pad(startMin)}00`;
+
+      const title = encodeURIComponent(`Cassate Band Recordz - ${serviceName}`);
+      const details = encodeURIComponent(
+        `Studio Reservation Pass\nService: ${serviceName}\nReference Code: ${refCode}\nRoom: ${studioName}\nReserved Time: ${timeStr}\n\nClient: ${booking?.clientName || 'Studio Client'}\nPhone: +91 90252 53695\nCassate Band Recordz Post Production Studio`
+      );
+      const location = encodeURIComponent('Cassate Band Recordz Post Production Studio, Chennai');
+
+      const gCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startIso}/${endIso}&details=${details}&location=${location}`;
+
+      const supported = await Linking.canOpenURL(gCalUrl);
+      if (supported) {
+        await Linking.openURL(gCalUrl);
+      } else {
+        await Linking.openURL(gCalUrl);
+      }
+    } catch (err) {
+      Alert.alert(
+        'Calendar Event',
+        `Session for ${booking?.serviceName} on ${booking?.date} at ${booking?.timeSlot}.\n\nPlease check your calendar app to save this booking.`,
+        [{ text: 'OK' }]
+      );
+    }
   };
 
   return (

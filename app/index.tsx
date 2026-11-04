@@ -18,26 +18,25 @@ export default function InitialEntranceScreen() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
 
-  // Phase 1: 'loading', Phase 2: 'poster'
-  const [phase, setPhase] = useState<'loading' | 'poster'>('loading');
+  // State to clean up loading layer after smooth fade-out
+  const [loadingComplete, setLoadingComplete] = useState<boolean>(false);
 
   // Loading animation values
   const loadingFadeAnim = useRef(new Animated.Value(1)).current;
   const loadingScaleAnim = useRef(new Animated.Value(0.96)).current;
   const pulseRingAnim = useRef(new Animated.Value(0.35)).current;
 
-  // Poster swap animation values
-  const posterFadeAnim = useRef(new Animated.Value(0)).current;
-  const posterScaleAnim = useRef(new Animated.Value(1.02)).current;
+  // Poster transition values
+  const posterFadeAnim = useRef(new Animated.Value(1)).current;
 
   // Draggable clap icon slider values
   const swipePan = useRef(new Animated.Value(0)).current;
-  const [trackWidth, setTrackWidth] = useState<number>(width * 0.64);
   const isEnteringRef = useRef(false);
 
-  // Medium increased size clap icon dimensions
-  const thumbWidth = 68;
-  const maxDrag = Math.max(70, trackWidth - thumbWidth);
+  // Calculated dimensions (stable across renders, avoids onLayout jitter)
+  const trackWidth = Math.min(270, Math.round(width * 0.60));
+  const thumbWidth = 70;
+  const maxDrag = Math.max(65, trackWidth - thumbWidth + 8);
 
   useEffect(() => {
     // 1. Loading pulse animation
@@ -49,7 +48,7 @@ export default function InitialEntranceScreen() {
     );
     pulseLoop.start();
 
-    // Subtle scale in of loading brand card
+    // Gentle scale in of loading brand box
     Animated.spring(loadingScaleAnim, {
       toValue: 1,
       friction: 6,
@@ -57,26 +56,14 @@ export default function InitialEntranceScreen() {
       useNativeDriver: true,
     }).start();
 
-    // 2. Smooth "swap style" transition from loading animation to Get Started poster (~1.25s)
+    // 2. Smooth zero-glitch transition (~1.25s): Loading layer smoothly fades out to reveal pre-warmed poster
     const swapTimer = setTimeout(() => {
       Animated.timing(loadingFadeAnim, {
         toValue: 0,
-        duration: 280,
+        duration: 380,
         useNativeDriver: true,
       }).start(() => {
-        setPhase('poster');
-        Animated.parallel([
-          Animated.timing(posterFadeAnim, {
-            toValue: 1,
-            duration: 350,
-            useNativeDriver: true,
-          }),
-          Animated.timing(posterScaleAnim, {
-            toValue: 1,
-            duration: 350,
-            useNativeDriver: true,
-          }),
-        ]).start();
+        setLoadingComplete(true);
       });
     }, 1250);
 
@@ -90,15 +77,16 @@ export default function InitialEntranceScreen() {
     if (isEnteringRef.current) return;
     isEnteringRef.current = true;
 
-    // Smoothly slide clap icon to the end point (arrow) and transition into Home
+    // Smooth slide of clap thumb to the arrow end point
     Animated.timing(swipePan, {
       toValue: maxDrag,
-      duration: 170,
+      duration: 160,
       useNativeDriver: true,
     }).start(() => {
+      // Smooth fade into tabs
       Animated.timing(posterFadeAnim, {
         toValue: 0,
-        duration: 200,
+        duration: 180,
         useNativeDriver: true,
       }).start(() => {
         router.replace('/(tabs)');
@@ -106,11 +94,11 @@ export default function InitialEntranceScreen() {
     });
   };
 
-  // PanResponder to make ONLY the Clap Icon act as an interactive slider
+  // PanResponder for the Clap Icon: Supports smooth slide AND instant tap without any glitch
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dx) > 3,
+      onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dx) > 2,
       onPanResponderMove: (_, gestureState) => {
         if (isEnteringRef.current) return;
         const newX = Math.min(maxDrag, Math.max(0, gestureState.dx));
@@ -119,15 +107,18 @@ export default function InitialEntranceScreen() {
       onPanResponderRelease: (_, gestureState) => {
         if (isEnteringRef.current) return;
 
-        // If dragged more than 40% of the track OR swiped quickly to the right -> enter studio!
-        if (gestureState.dx > maxDrag * 0.4 || gestureState.vx > 0.7) {
+        // Tap detected (minimal movement) OR slide detected (dragged past 35% or flicked)
+        const isTap = Math.abs(gestureState.dx) < 8 && Math.abs(gestureState.dy) < 8;
+        const isSlide = gestureState.dx > maxDrag * 0.35 || gestureState.vx > 0.6;
+
+        if (isTap || isSlide) {
           handleEnterHome();
         } else {
-          // Spring back smoothly to the starting clap box
+          // Spring back smoothly to the starting clap box position
           Animated.spring(swipePan, {
             toValue: 0,
-            friction: 6,
-            tension: 80,
+            friction: 7,
+            tension: 90,
             useNativeDriver: true,
           }).start();
         }
@@ -137,10 +128,60 @@ export default function InitialEntranceScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar style={phase === 'loading' ? 'dark' : 'light'} />
+      <StatusBar style="light" />
 
-      {/* ── PHASE 1: ANIMATED BRAND LOADING SCREEN ── */}
-      {phase === 'loading' && (
+      {/* ── PHASE 2: ANDROID FULL-FIT POSTER SCREEN (Always mounted underneath for zero image decode flash) ── */}
+      <Animated.View
+        style={[
+          styles.posterContainer,
+          { opacity: posterFadeAnim },
+        ]}
+      >
+        <ImageBackground
+          source={require('../assets/images/get_started_android_banner.jpg')}
+          style={styles.posterBg}
+          resizeMode="cover"
+        >
+          {/* Full-screen tap surface outside the slider */}
+          <TouchableOpacity
+            style={StyleSheet.absoluteFillObject}
+            onPress={handleEnterHome}
+            activeOpacity={1}
+          />
+
+          {/* ── INTERACTIVE CLAP ICON SLIDER (Aligned precisely over banner button) ── */}
+          <View
+            style={[
+              styles.sliderHotspot,
+              { width: trackWidth },
+            ]}
+          >
+            <TouchableOpacity
+              style={styles.sliderInteractiveTrack}
+              onPress={handleEnterHome}
+              activeOpacity={0.96}
+            >
+              {/* ── MEDIUM INCREASED SIZE CLAP ICON (SLIDER THUMB) ── */}
+              <Animated.View
+                style={[
+                  styles.clapThumbContainer,
+                  { transform: [{ translateX: swipePan }] },
+                ]}
+                {...panResponder.panHandlers}
+              >
+                <Image
+                  source={require('../assets/images/clip_box_thumb.png')}
+                  style={styles.clapThumbImage}
+                  resizeMode="contain"
+                />
+              </Animated.View>
+            </TouchableOpacity>
+          </View>
+        </ImageBackground>
+      </Animated.View>
+
+      {/* ── PHASE 1: BRAND LOADING SCREEN (Overlays poster and smoothly dissolves away) ── */}
+      {!loadingComplete && (
         <Animated.View
           style={[
             styles.loadingContainer,
@@ -149,6 +190,7 @@ export default function InitialEntranceScreen() {
               transform: [{ scale: loadingScaleAnim }],
             },
           ]}
+          pointerEvents={loadingComplete ? 'none' : 'auto'}
         >
           <View style={styles.loadingBrandBox}>
             <Image
@@ -167,63 +209,6 @@ export default function InitialEntranceScreen() {
           </View>
         </Animated.View>
       )}
-
-      {/* ── PHASE 2: ANDROID FULL-FIT BANNER WITH PROPER CLAP ICON SLIDER ── */}
-      {phase === 'poster' && (
-        <Animated.View
-          style={[
-            styles.posterContainer,
-            {
-              opacity: posterFadeAnim,
-              transform: [{ scale: posterScaleAnim }],
-            },
-          ]}
-        >
-          {/* Full-bleed edge-to-edge Android-optimized banner (zero side crop, zero letterboxing) */}
-          <ImageBackground
-            source={require('../assets/images/get_started_android_banner.jpg')}
-            style={styles.posterBg}
-            resizeMode="cover"
-          >
-            {/* Full-screen tap fallback */}
-            <TouchableOpacity
-              style={StyleSheet.absoluteFillObject}
-              onPress={handleEnterHome}
-              activeOpacity={1}
-            />
-
-            {/* ── INTERACTIVE CLAP ICON SLIDER (Aligned precisely over banner button) ── */}
-            <View
-              style={styles.sliderHotspot}
-              onLayout={(e) => {
-                const w = e.nativeEvent.layout.width;
-                if (w > 0) setTrackWidth(w);
-              }}
-            >
-              <TouchableOpacity
-                style={styles.sliderInteractiveTrack}
-                onPress={handleEnterHome}
-                activeOpacity={0.96}
-              >
-                {/* ── MEDIUM INCREASED SIZE CLAP ICON (SLIDER THUMB) ── */}
-                <Animated.View
-                  style={[
-                    styles.clapThumbContainer,
-                    { transform: [{ translateX: swipePan }] },
-                  ]}
-                  {...panResponder.panHandlers}
-                >
-                  <Image
-                    source={require('../assets/images/clip_box_thumb.png')}
-                    style={styles.clapThumbImage}
-                    resizeMode="contain"
-                  />
-                </Animated.View>
-              </TouchableOpacity>
-            </View>
-          </ImageBackground>
-        </Animated.View>
-      )}
     </View>
   );
 }
@@ -237,13 +222,13 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 
-  // ── Phase 1: Loading Screen Styles ──
+  // ── Phase 1: Loading Screen Styles (Overlays Phase 2 smoothly) ──
   loadingContainer: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: '#FBFCF8', // Pearl White canvas matching brand theme
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 10,
+    zIndex: 50,
   },
   loadingBrandBox: {
     alignItems: 'center',
@@ -296,7 +281,7 @@ const styles = StyleSheet.create({
   posterContainer: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: '#07070A',
-    zIndex: 5,
+    zIndex: 10,
     width: '100%',
     height: '100%',
   },
@@ -306,25 +291,24 @@ const styles = StyleSheet.create({
     height: '100%',
     position: 'relative',
   },
-  // Precisely covers the button area in the banner (66% from top, 62% width)
+  // Precisely covers the button area in the banner (66.2% from top, centered)
   sliderHotspot: {
     position: 'absolute',
     top: '65.8%',
-    left: '19%',
-    right: '19%',
+    alignSelf: 'center',
     height: 62,
-    zIndex: 20,
+    zIndex: 25,
     justifyContent: 'center',
   },
   sliderInteractiveTrack: {
     width: '100%',
     height: '100%',
-    backgroundColor: 'transparent', // 100% transparent: leaves the banner's own slider board & end point pristine!
+    backgroundColor: 'transparent', // 100% transparent: leaves banner's own slider board & end point pristine
     justifyContent: 'center',
     flexDirection: 'row',
     alignItems: 'center',
   },
-  // Proper medium increased size clap icon handle
+  // Medium increased size clap icon handle
   clapThumbContainer: {
     position: 'absolute',
     left: -4,
@@ -332,7 +316,7 @@ const styles = StyleSheet.create({
     height: 62,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 30,
+    zIndex: 35,
     elevation: 12,
     shadowColor: '#FACC15',
     shadowOffset: { width: 0, height: 2 },
