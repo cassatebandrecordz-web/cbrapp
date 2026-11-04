@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
+  RefreshControl,
   useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -21,7 +22,14 @@ export default function ConfirmedPassesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const { bookings } = useApp();
+  const { bookings, refreshBookings } = useApp();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await refreshBookings();
+    setRefreshing(false);
+  };
 
   const [activeTab, setActiveTab] = useState<'All' | 'Upcoming' | 'Past'>('All');
 
@@ -77,6 +85,14 @@ export default function ConfirmedPassesScreen() {
         style={{ width: '100%' }}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 28 }]}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={COLORS.primary}
+            colors={['#EAB308', '#CA8A04']}
+          />
+        }
       >
         {/* ── Filter Tabs ── */}
         <View style={styles.tabFilterRow}>

@@ -54,7 +54,20 @@ const AnimatedTabIcon: React.FC<AnimatedTabIconProps> = ({
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
-  const bottomInset = Math.max(insets.bottom, Platform.OS === 'android' ? 14 : 8);
+  const bottomInset =
+    Platform.OS === 'android'
+      ? (insets.bottom > 20 ? insets.bottom : 18)
+      : Math.max(insets.bottom, 8);
+
+  const tabBarHeight =
+    Platform.OS === 'android'
+      ? (insets.bottom > 20 ? 56 + insets.bottom : 66)
+      : (52 + insets.bottom);
+
+  const tabPaddingBottom =
+    Platform.OS === 'android'
+      ? (insets.bottom > 20 ? insets.bottom + 2 : 10)
+      : (insets.bottom || 8);
 
   return (
     <Tabs
@@ -63,10 +76,13 @@ export default function TabLayout() {
         tabBarStyle: [
           styles.tabBar,
           {
-            height: 52 + bottomInset,
-            paddingBottom: bottomInset,
+            height: tabBarHeight,
+            paddingBottom: tabPaddingBottom,
           },
         ],
+        tabBarItemStyle: {
+          paddingBottom: 2,
+        },
         tabBarActiveTintColor: '#CA8A04',
         tabBarInactiveTintColor: '#6B7280',
         tabBarLabelStyle: styles.tabLabel,

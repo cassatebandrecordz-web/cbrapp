@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,7 +14,14 @@ import { useApp } from '../src/context/AppContext';
 export default function MyBookingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { bookings, cancelBooking } = useApp();
+  const { bookings, cancelBooking, refreshBookings } = useApp();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await refreshBookings();
+    setRefreshing(false);
+  };
 
   const [activeTab, setActiveTab] = useState<'All' | 'Upcoming' | 'Past'>('All');
 
@@ -54,6 +61,14 @@ export default function MyBookingsScreen() {
       <ScrollView
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 28 }]}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={COLORS.primary}
+            colors={['#EAB308', '#CA8A04']}
+          />
+        }
       >
         <DemoNoticeBanner compact={true} />
 

@@ -111,6 +111,16 @@ export const StudioApi = {
   },
 
   /**
+   * Real-time all bookings listener (WebSockets via Supabase)
+   */
+  subscribeToBookings(callback: (bookings: any[]) => void) {
+    if (isSupabaseConfigured) {
+      return SupabaseStudioService.subscribeToAllBookings(callback);
+    }
+    return () => {};
+  },
+
+  /**
    * Temporary hold on slots while paying
    */
   async lockSlots(date: string, slots: string[], userId: string): Promise<boolean> {
@@ -149,7 +159,7 @@ export const StudioApi = {
       }
       return data;
     } catch {
-      const fallbackId = `CB-${Math.floor(1000 + Math.random() * 9000)}`;
+      const fallbackId = `CBR-2026-${Math.floor(1000 + Math.random() * 9000)}`;
       return {
         success: true,
         booking: {
@@ -163,16 +173,16 @@ export const StudioApi = {
   },
 
   /**
-   * Fetch user's booking history
+   * Fetch all bookings from Supabase / API
    */
-  async getBookings(userId: string, email?: string): Promise<any[]> {
+  async getBookings(userId?: string, email?: string): Promise<any[]> {
     if (isSupabaseConfigured) {
-      const list = await SupabaseStudioService.getUserBookings(email);
+      const list = await SupabaseStudioService.getAllBookings(email);
       if (list && list.length > 0) return list;
     }
 
     try {
-      const res = await fetch(`${API_BASE}/bookings?userId=${encodeURIComponent(userId)}`);
+      const res = await fetch(`${API_BASE}/bookings${userId ? `?userId=${encodeURIComponent(userId)}` : ''}`);
       if (!res.ok) throw new Error('Failed to fetch bookings');
       const data = await res.json();
       return data.bookings || [];

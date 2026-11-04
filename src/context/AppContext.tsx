@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import {
   BookingItem,
   INITIAL_BOOKINGS,
@@ -13,6 +13,7 @@ import {
   STUDIOS,
   StudioRoom,
 } from '../data/mockData';
+import { StudioApi, CreateBookingPayload } from '../services/api';
 
 export interface BookingDraft {
   serviceId: string;
@@ -37,7 +38,7 @@ export interface BookingDraft {
 const DEFAULT_BOOKING_DRAFT: BookingDraft = {
   serviceId: 'dubbing',
   serviceName: 'Dubbing Studio',
-  studioId: 'studio-a',
+  studioId: 'studio-dubbing',
   studioName: 'Dubbing Studio',
   studioSubtitle: 'Dubbing & VO (Acoustic Treated)',
   durationLabel: '2 Hours',
@@ -48,8 +49,8 @@ const DEFAULT_BOOKING_DRAFT: BookingDraft = {
   studioCharges: 700,
   gstAmount: 0,
   totalPrice: 700,
-  advanceAmount: 350,
-  paymentMethod: 'Pay at Studio',
+  advanceAmount: 700, // Full payment term
+  paymentMethod: 'UPI Full Payment',
   engineerIncluded: true,
 };
 
@@ -69,7 +70,7 @@ const DEFAULT_USER: UserProfile = {
   id: 'usr-1',
   name: 'Devon Vance',
   email: 'client@cassaterecordz.com',
-  phone: '+91 98765 43210',
+  phone: '+91 90252 53695',
   company: 'Vance Audio Visual Works',
   role: 'Studio Client',
   tier: 'Studio Client',
@@ -91,8 +92,9 @@ interface AppContextType {
   bookings: BookingItem[];
   bookingDraft: BookingDraft;
   updateBookingDraft: (updates: Partial<BookingDraft>) => void;
-  confirmBooking: () => BookingItem;
+  confirmBooking: (customPayload?: Partial<CreateBookingPayload>) => BookingItem;
   cancelBooking: (id: string) => void;
+  refreshBookings: () => Promise<void>;
 
   getProject: (id: string) => ProjectItem | undefined;
   addRevision: (projectId: string, revision: Omit<RevisionItem, 'id' | 'createdAt' | 'status'>) => void;
@@ -108,6 +110,29 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+// Helper to convert database rows to mobile BookingItem model
+function mapDbRowToBookingItem(b: any): BookingItem {
+  return {
+    id: b.id,
+    referenceCode: b.id,
+    serviceId: b.service_id || 'dubbing',
+    serviceName: b.service_name || 'Dubbing Studio',
+    studioId: b.service_id === 'dubbing' ? 'studio-dubbing' : 'studio-a',
+    studioName: b.studio_name || 'Dubbing Studio (Acoustic Treated)',
+    date: b.date,
+    timeSlot: b.time_slot_label || (Array.isArray(b.time_slots) ? b.time_slots.join(', ') : b.time_slot || ''),
+    durationHours: Array.isArray(b.time_slots) ? b.time_slots.length : 2,
+    studioCharges: Number(b.total_price) || 700,
+    gstAmount: 0,
+    totalPrice: Number(b.total_price) || 700,
+    advanceAmount: Number(b.advance_amount) || Number(b.total_price) || 700,
+    paymentMethod: b.payment_method || 'UPI Full Payment',
+    status: b.status === 'CONFIRMED' || b.status === 'Confirmed' ? 'Confirmed' : (b.status === 'COMPLETED' ? 'Completed' : 'Rescheduled'),
+    notes: 'Studio session booked via official Cassate Band Recordz mobile app.',
+    createdAt: b.created_at ? b.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+  };
+}
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile>(DEFAULT_USER);
   const [projects, setProjects] = useState<ProjectItem[]>(INITIAL_PROJECTS);
@@ -116,6 +141,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [bookingDraft, setBookingDraft] = useState<BookingDraft>(DEFAULT_BOOKING_DRAFT);
 
   const isLoggedIn = true;
+
+  // ── Sync with Supabase Database ──
+  const refreshBookings = useCallback(async () => {
+    try {
+      const liveList = await StudioApi.getBookings(user.id, user.email);
+      if (liveList && liveList.length > 0) {
+        const formatted = liveList.map(mapDbRowToBookingItem);
+        setBookings(formatted);
+      }
+    } catch (err) {
+      console.warn('[AppContext] Failed to refresh bookings:', err);
+    }
+  }, [user.id, user.email]);
+
+  useEffect(() => {
+    // 1. Fetch live bookings on mount
+    refreshBookings();
+
+    // 2. Real-time subscription to live database changes via WebSockets
+    const unsubscribe = StudioApi.subscribeToBookings((updatedList) => {
+      if (updatedList && updatedList.length > 0) {
+        const formatted = updatedList.map(mapDbRowToBookingItem);
+        setBookings(formatted);
+      }
+    });
+
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, [refreshBookings]);
 
   const loginDemo = (override?: Partial<UserProfile>) => {
     setUser((prev) => ({ ...prev, ...override }));
@@ -142,7 +197,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const charges = studio.hourlyRate * hours;
       const gst = 0; // Zero GST
       const total = charges;
-      const advance = Math.round(total * 0.5);
+      const advance = total; // 100% Full Payment
 
       merged.studioCharges = charges;
       merged.gstAmount = gst;
@@ -153,35 +208,65 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
-  const confirmBooking = (): BookingItem => {
+  const confirmBooking = (customPayload?: Partial<CreateBookingPayload>): BookingItem => {
     const randomCode = `CBR-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+
     const newBooking: BookingItem = {
-      id: `b-${Date.now()}`,
+      id: randomCode,
       referenceCode: randomCode,
-      serviceId: bookingDraft.serviceId,
-      serviceName: bookingDraft.serviceName,
+      serviceId: customPayload?.serviceId || bookingDraft.serviceId,
+      serviceName: customPayload?.serviceName || bookingDraft.serviceName,
       studioId: bookingDraft.studioId,
-      studioName: bookingDraft.studioName,
-      date: bookingDraft.date,
-      timeSlot: bookingDraft.timeSlot,
-      durationHours: bookingDraft.durationHours,
-      studioCharges: bookingDraft.studioCharges,
-      gstAmount: bookingDraft.gstAmount,
-      totalPrice: bookingDraft.totalPrice,
-      advanceAmount: bookingDraft.advanceAmount,
-      paymentMethod: bookingDraft.paymentMethod,
+      studioName: customPayload?.studioName || bookingDraft.studioName,
+      date: customPayload?.date || bookingDraft.date,
+      timeSlot: customPayload?.timeSlotLabel || bookingDraft.timeSlot,
+      durationHours: customPayload?.timeSlots?.length || bookingDraft.durationHours,
+      studioCharges: customPayload?.totalPrice || bookingDraft.totalPrice,
+      gstAmount: 0,
+      totalPrice: customPayload?.totalPrice || bookingDraft.totalPrice,
+      advanceAmount: customPayload?.totalPrice || bookingDraft.totalPrice,
+      paymentMethod: customPayload?.paymentMethod || 'UPI Full Payment',
       status: 'Confirmed',
-      notes: bookingDraft.notes || 'Studio session booked via mobile app.',
+      notes: bookingDraft.notes || 'Studio session booked via official mobile app.',
       createdAt: new Date().toISOString().split('T')[0],
     };
 
+    // 1. Immediately update UI state for zero latency
     setBookings((prev) => [newBooking, ...prev]);
 
-    // Push instant notification
+    // 2. Persist to live Supabase PostgreSQL backend in background
+    const apiPayload: CreateBookingPayload = {
+      serviceId: newBooking.serviceId,
+      serviceName: newBooking.serviceName,
+      studioName: newBooking.studioName,
+      date: newBooking.date,
+      timeSlots: customPayload?.timeSlots || [newBooking.timeSlot],
+      timeSlotLabel: newBooking.timeSlot,
+      totalPrice: newBooking.totalPrice,
+      advanceAmount: newBooking.totalPrice,
+      paymentMethod: newBooking.paymentMethod,
+      upiRefId: randomCode,
+      clientName: user.name,
+      clientPhone: user.phone,
+      clientEmail: user.email,
+      userId: user.id,
+    };
+
+    StudioApi.createBooking(apiPayload)
+      .then((res) => {
+        if (res.success) {
+          console.log('[Backend] Booking saved to live Supabase:', res.booking?.id || randomCode);
+        }
+      })
+      .catch((err) => {
+        console.warn('[Backend] Async Supabase save notice:', err);
+      });
+
+    // 3. Push instant in-app notification
     const newNotif: NotificationItem = {
       id: `notif-${Date.now()}`,
       title: 'Booking Confirmed!',
-      message: `Your reservation for ${bookingDraft.serviceName} (${randomCode}) is logged.`,
+      message: `Your reservation for ${newBooking.serviceName} (${randomCode}) is confirmed & active.`,
       type: 'booking',
       timestamp: 'Just now',
       read: false,
@@ -196,6 +281,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setBookings((prev) =>
       prev.map((b) => (b.id === id ? { ...b, status: 'Rescheduled' as const } : b))
     );
+
+    const target = bookings.find((b) => b.id === id);
+    if (target) {
+      StudioApi.cancelBooking(id, target.date, [target.timeSlot]).catch(() => {});
+    }
   };
 
   const getProject = (id: string) => {
@@ -262,6 +352,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateBookingDraft,
         confirmBooking,
         cancelBooking,
+        refreshBookings,
         getProject,
         addRevision,
         updateProjectProgress,

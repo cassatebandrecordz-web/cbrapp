@@ -13,6 +13,7 @@ class SoundEffectManager {
   private slotAudioBuffer: any = null;
   private slotAudioElement: any = null;
   private nativePlayer: any = null;
+  private audioModeSet: boolean = false;
 
   constructor() {
     // Zero initialization in constructor to ensure 100% safe app launch
@@ -21,15 +22,26 @@ class SoundEffectManager {
   private playNativeAudio(volume = 0.9): boolean {
     if (Platform.OS === 'web') return false;
     try {
-      if (!this.nativePlayer) {
-        // Dynamically require expo-audio only on user action
-        const expoAudio = require('expo-audio');
-        if (expoAudio && typeof expoAudio.createAudioPlayer === 'function') {
+      // Dynamically require expo-audio only on user action
+      const expoAudio = require('expo-audio');
+      if (expoAudio) {
+        if (!this.audioModeSet && typeof expoAudio.setAudioModeAsync === 'function') {
+          expoAudio
+            .setAudioModeAsync({
+              playsInSilentMode: true,
+              interruptionMode: 'mixWithOthers',
+            })
+            .catch(() => {});
+          this.audioModeSet = true;
+        }
+
+        if (!this.nativePlayer && typeof expoAudio.createAudioPlayer === 'function') {
           this.nativePlayer = expoAudio.createAudioPlayer(
             require('../../assets/sounds/slot_timing_click.mp3')
           );
         }
       }
+
       if (this.nativePlayer) {
         this.nativePlayer.volume = volume;
         if (typeof this.nativePlayer.seekTo === 'function') {

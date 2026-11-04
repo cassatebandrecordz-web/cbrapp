@@ -86,7 +86,7 @@ export default function ContactStudioScreen() {
         contentContainerStyle={[
           styles.scrollContent,
           isDesktopWeb && styles.desktopScrollContent,
-          { paddingBottom: insets.bottom + 40 },
+          { paddingBottom: insets.bottom + 64 },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -470,6 +470,8 @@ const styles = StyleSheet.create({
   },
   contactItemContent: {
     flex: 1,
+    minWidth: 0,
+    justifyContent: 'center',
   },
   badgeRow: {
     flexDirection: 'row',

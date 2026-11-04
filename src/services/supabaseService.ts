@@ -1,6 +1,38 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { CreateBookingPayload, BookingResponse } from './api';
 
+/**
+ * Extracts all matching date formats for a given date string.
+ * Example: 'Wed, 4 Nov 2026' -> ['Wed, 4 Nov 2026', '2026-11-04']
+ *          '2026-11-04'      -> ['2026-11-04', 'Wed, 4 Nov 2026']
+ */
+export function getDateVariants(dateStr: string): string[] {
+  if (!dateStr) return [];
+  const variants = [dateStr.trim()];
+
+  try {
+    const parsed = new Date(dateStr);
+    if (!isNaN(parsed.getTime())) {
+      const yyyy = parsed.getFullYear();
+      const mm = String(parsed.getMonth() + 1).padStart(2, '0');
+      const dd = String(parsed.getDate()).padStart(2, '0');
+      const iso = `${yyyy}-${mm}-${dd}`;
+      if (!variants.includes(iso)) variants.push(iso);
+
+      const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const dayName = DAY_NAMES[parsed.getDay()];
+      const monthShort = MONTH_SHORT[parsed.getMonth()];
+      const human = `${dayName}, ${parsed.getDate()} ${monthShort} ${yyyy}`;
+      if (!variants.includes(human)) variants.push(human);
+    }
+  } catch {
+    // Ignore date parse errors
+  }
+
+  return variants;
+}
+
 export const SupabaseStudioService = {
   /**
    * Check if Supabase connection is active
@@ -14,10 +46,12 @@ export const SupabaseStudioService = {
     if (!isSupabaseConfigured) return [];
 
     try {
+      const variants = getDateVariants(date);
+
       const { data, error } = await supabase
         .from('studio_slots')
         .select('slot_time, status, expires_at')
-        .eq('date', date);
+        .in('date', variants);
 
       if (error) {
         console.warn('[Supabase] Failed to fetch slots:', error.message);
@@ -45,15 +79,15 @@ export const SupabaseStudioService = {
   subscribeToSlots(date: string, onChange: (bookedSlots: string[]) => void) {
     if (!isSupabaseConfigured) return () => {};
 
+    const channelName = `public:studio_slots:${date.replace(/[^a-zA-Z0-9]/g, '_')}`;
     const channel = supabase
-      .channel(`public:studio_slots:${date}`)
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'studio_slots',
-          filter: `date=eq.${date}`,
         },
         async () => {
           // Re-fetch all slots for date when changes happen in database
@@ -77,7 +111,11 @@ export const SupabaseStudioService = {
     }
 
     try {
-      const passId = `CB-${Math.floor(1000 + Math.random() * 9000)}`;
+      const passId = payload.upiRefId?.startsWith('CBR-')
+        ? payload.upiRefId
+        : `CBR-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+
+      const dateVariants = getDateVariants(payload.date);
 
       // 1. Insert into bookings table
       const { data: bookingData, error: bookingError } = await supabase
@@ -94,28 +132,34 @@ export const SupabaseStudioService = {
           advance_amount: payload.totalPrice, // Full Payment Term
           payment_method: payload.paymentMethod || 'UPI Full Payment',
           payment_status: 'PAID_IN_FULL',
-          upi_ref_id: payload.upiRefId || `UPI-${Date.now().toString().slice(-8)}`,
+          upi_ref_id: payload.upiRefId || passId,
           status: 'CONFIRMED',
           client_name: payload.clientName || 'Studio Client',
-          client_phone: payload.clientPhone || '',
-          client_email: payload.clientEmail || '',
+          client_phone: payload.clientPhone || '+91 90252 53695',
+          client_email: payload.clientEmail || 'client@cassaterecordz.com',
         })
         .select()
         .single();
 
       if (bookingError) {
+        console.warn('[Supabase] Booking insert error:', bookingError.message);
         throw new Error(bookingError.message);
       }
 
-      // 2. Insert slot locks for each selected slot
-      const slotsToInsert = payload.timeSlots.map((slot) => ({
-        date: payload.date,
-        slot_time: slot,
-        service_id: payload.serviceId || 'dubbing',
-        status: 'booked',
-        client_name: payload.clientName,
-        booking_id: passId,
-      }));
+      // 2. Insert slot locks for each selected slot for ALL date variants
+      const slotsToInsert: any[] = [];
+      for (const slot of payload.timeSlots) {
+        for (const d of dateVariants) {
+          slotsToInsert.push({
+            date: d,
+            slot_time: slot,
+            service_id: payload.serviceId || 'dubbing',
+            status: 'booked',
+            client_name: payload.clientName || 'Studio Client',
+            booking_id: passId,
+          });
+        }
+      }
 
       const { error: slotsError } = await supabase
         .from('studio_slots')
@@ -137,9 +181,9 @@ export const SupabaseStudioService = {
   },
 
   /**
-   * Fetch all bookings for a client
+   * Fetch all bookings for a client or entire studio
    */
-  async getUserBookings(clientEmail?: string): Promise<any[]> {
+  async getAllBookings(clientEmail?: string): Promise<any[]> {
     if (!isSupabaseConfigured) return [];
 
     try {
@@ -154,6 +198,33 @@ export const SupabaseStudioService = {
       console.warn('[Supabase] Failed to fetch bookings:', err);
       return [];
     }
+  },
+
+  /**
+   * Subscribe to live Real-Time WebSocket updates for all studio bookings
+   */
+  subscribeToAllBookings(onChange: (bookings: any[]) => void) {
+    if (!isSupabaseConfigured) return () => {};
+
+    const channel = supabase
+      .channel('public:bookings_realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookings',
+        },
+        async () => {
+          const updated = await SupabaseStudioService.getAllBookings();
+          onChange(updated);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   },
 
   /**

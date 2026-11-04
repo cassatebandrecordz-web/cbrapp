@@ -6,14 +6,14 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "cassatebandrecordz",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "package": "com.cassatebandrecordz.studio",
       "adaptiveIcon": {
-        "backgroundColor": "#0A0813",
+        "backgroundColor": "#FBFCF8",
         "foregroundImage": "./assets/android-icon-foreground.png"
       },
       "predictiveBackGestureEnabled": false
@@ -29,10 +29,14 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#0A0813",
+          "backgroundColor": "#FBFCF8",
           "image": "./assets/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain"
+          "imageWidth": 220,
+          "resizeMode": "contain",
+          "dark": {
+            "backgroundColor": "#FBFCF8",
+            "image": "./assets/splash-icon.png"
+          }
         }
       ],
       "expo-asset"

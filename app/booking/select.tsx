@@ -445,30 +445,26 @@ export default function SlotBookingScreen() {
     setBookedSlotsByDate((prev) => ({
       ...prev,
       [selectedDayId]: [...(prev[selectedDayId] || []), ...selectedSlots],
+      [selectedDayObj.fullDate]: [...(prev[selectedDayObj.fullDate] || []), ...selectedSlots],
     }));
 
     // Post to live backend for permanent multi-device slot locking (Full Payment Auto-Booking)
-    try {
-      StudioApi.createBooking({
-        serviceId: 'dubbing',
-        serviceName: 'Dubbing Studio',
-        studioName: 'Dubbing Studio (Acoustic Treated)',
-        date: selectedDayObj.fullDate,
-        timeSlots: selectedSlots,
-        timeSlotLabel: formattedSlotsString,
-        totalPrice: totalPrice,
-        advanceAmount: totalPrice,
-        paymentMethod: 'UPI Full Payment',
-        clientName: user.name,
-        clientPhone: user.phone,
-        clientEmail: user.email,
-        userId: user.id,
-      }).catch((e) => console.log('[API] Backend sync notice:', e));
-    } catch {
-      // Offline graceful fallback
-    }
+    const booking = confirmBooking({
+      serviceId: 'dubbing',
+      serviceName: 'Dubbing Studio',
+      studioName: 'Dubbing Studio (Acoustic Treated)',
+      date: selectedDayObj.fullDate,
+      timeSlots: selectedSlots,
+      timeSlotLabel: formattedSlotsString,
+      totalPrice: totalPrice,
+      advanceAmount: totalPrice,
+      paymentMethod: 'UPI Full Payment',
+      clientName: user.name,
+      clientPhone: user.phone,
+      clientEmail: user.email,
+      userId: user.id,
+    });
 
-    const booking = confirmBooking();
     router.push({
       pathname: '/booking/confirmation',
       params: { bookingId: booking.id, code: booking.referenceCode },
