@@ -1,6 +1,6 @@
 import React, { useEffect, Component, ErrorInfo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform, useWindowDimensions, StatusBar } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useRouter, usePathname } from 'expo-router';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
@@ -116,7 +116,9 @@ const errorStyles = StyleSheet.create({
 
 export default function RootLayout() {
   const { width } = useWindowDimensions();
-  const isWebDesktop = Platform.OS === 'web' && width > 480;
+  const pathname = usePathname();
+  const isAdminScreen = typeof pathname === 'string' && pathname.includes('admin');
+  const isWebDesktop = Platform.OS === 'web' && width > 480 && !isAdminScreen;
 
   useEffect(() => {
     // Force hide native splash screen immediately when root layout mounts
@@ -133,13 +135,18 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ErrorBoundary>
         <AppProvider>
-          <ExpoStatusBar style="dark" />
-          <View style={styles.rootOuter}>
-            <View style={[styles.rootInner, isWebDesktop && styles.desktopFrame]}>
+          <ExpoStatusBar style={isAdminScreen ? 'light' : 'dark'} />
+          <View style={[styles.rootOuter, isAdminScreen && styles.adminRootOuter]}>
+            <View
+              style={[
+                styles.rootInner,
+                isAdminScreen ? styles.adminRootInner : (isWebDesktop && styles.desktopFrame),
+              ]}
+            >
               <Stack
                 screenOptions={{
                   headerShown: false,
-                  contentStyle: { backgroundColor: '#FBFCF8' },
+                  contentStyle: { backgroundColor: isAdminScreen ? '#0A0A0F' : '#FBFCF8' },
                   animation: 'slide_from_right',
                   animationDuration: 280,
                 }}
@@ -175,6 +182,9 @@ export default function RootLayout() {
                 {/* General Utility Screens */}
                 <Stack.Screen name="notifications" options={{ animation: 'slide_from_right' }} />
                 <Stack.Screen name="contact" options={{ animation: 'slide_from_right' }} />
+
+                {/* Admin Web Portal */}
+                <Stack.Screen name="admin-web" options={{ animation: 'fade' }} />
               </Stack>
             </View>
           </View>
@@ -193,11 +203,20 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  adminRootOuter: {
+    backgroundColor: '#0A0A0F',
+    alignItems: 'stretch',
+    justifyContent: 'flex-start',
+  },
   rootInner: {
     flex: 1,
     width: '100%',
     height: '100%',
     backgroundColor: '#FBFCF8',
+  },
+  adminRootInner: {
+    maxWidth: '100%',
+    backgroundColor: '#0A0A0F',
   },
   desktopFrame: {
     maxWidth: 440,

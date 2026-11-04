@@ -322,9 +322,47 @@ export default async (req: Request, context: Context) => {
       return jsonResponse({ success: true, message: "Booking cancelled and slots released." });
     }
 
-    // ── 7. POST /api/auth/login ──
+    // ── 7. POST /api/auth/register ──
+    if (path === "/auth/register" && method === "POST") {
+      const body = await req.json();
+      const { name, email, phone, password, device, loginLocation } = body;
+      const usersMap = await readStoreKey<Record<string, any>>("users", {});
+
+      const newUserId = `usr-${Date.now().toString().slice(-5)}`;
+      const newUser = {
+        id: newUserId,
+        name: name || 'Studio Producer',
+        email: email || '',
+        phone: phone || '',
+        device: device || 'Android 14',
+        login_location: loginLocation || 'Chennai Studio, TN, India',
+        role: 'Studio Client',
+        isAdmin: false,
+        created_at: new Date().toISOString(),
+      };
+
+      usersMap[newUserId] = newUser;
+      await writeStoreKey("users", usersMap);
+
+      return jsonResponse({
+        success: true,
+        user: newUser,
+        token: `token-${newUserId}-${Date.now()}`,
+      });
+    }
+
+    // ── 8. GET /api/admin/users ──
+    if (path === "/admin/users" && method === "GET") {
+      const usersMap = await readStoreKey<Record<string, any>>("users", {});
+      return jsonResponse({
+        success: true,
+        users: Object.values(usersMap),
+      });
+    }
+
+    // ── 9. POST /api/auth/login ──
     if (path === "/auth/login" && method === "POST") {
-      const { identifier, password } = await req.json();
+      const { identifier, password, device, loginLocation } = await req.json();
       const usersMap = await readStoreKey<Record<string, any>>("users", {});
 
       const foundUser = Object.values(usersMap).find(
@@ -341,15 +379,18 @@ export default async (req: Request, context: Context) => {
         });
       }
 
-      // Auto-register guest if not found
+      // Auto-register producer if not found
       const newUserId = `usr-${Date.now().toString().slice(-5)}`;
       const newUser = {
         id: newUserId,
         name: identifier?.includes('@') ? identifier.split('@')[0] : 'Studio Artist',
         email: identifier?.includes('@') ? identifier : '',
         phone: !identifier?.includes('@') ? identifier : '',
+        device: device || 'Android 14',
+        login_location: loginLocation || 'Chennai Studio, TN, India',
         role: 'Studio Client',
         isAdmin: false,
+        created_at: new Date().toISOString(),
       };
 
       usersMap[newUserId] = newUser;

@@ -252,9 +252,41 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, { success: true, message: 'Booking cancelled & slots released' });
     }
 
-    // 7. POST /api/auth/login
+    // 7. POST /api/auth/register
+    if (path === '/auth/register' && method === 'POST') {
+      const body = await parseBody(req);
+      const { name, email, phone, device, loginLocation } = body;
+      const newUserId = `usr-${Date.now().toString().slice(-5)}`;
+      const newUser = {
+        id: newUserId,
+        name: name || 'Studio Producer',
+        email: email || '',
+        phone: phone || '',
+        device: device || 'Android 14',
+        login_location: loginLocation || 'Chennai Studio, TN, India',
+        role: 'Studio Client',
+        isAdmin: false,
+        created_at: new Date().toISOString(),
+      };
+      db.users[newUserId] = newUser;
+      return sendJson(res, {
+        success: true,
+        user: newUser,
+        token: `token-${newUserId}-${Date.now()}`,
+      });
+    }
+
+    // 8. GET /api/admin/users
+    if (path === '/admin/users' && method === 'GET') {
+      return sendJson(res, {
+        success: true,
+        users: Object.values(db.users),
+      });
+    }
+
+    // 9. POST /api/auth/login
     if (path === '/auth/login' && method === 'POST') {
-      const { identifier } = await parseBody(req);
+      const { identifier, device, loginLocation } = await parseBody(req);
       const foundUser = Object.values(db.users).find(
         (u) =>
           u.email?.toLowerCase() === identifier?.toLowerCase() ||
@@ -275,8 +307,11 @@ const server = http.createServer(async (req, res) => {
         name: identifier?.includes('@') ? identifier.split('@')[0] : 'Studio Artist',
         email: identifier?.includes('@') ? identifier : '',
         phone: !identifier?.includes('@') ? identifier : '',
+        device: device || 'Android 14',
+        login_location: loginLocation || 'Chennai Studio, TN, India',
         role: 'Studio Client',
         isAdmin: false,
+        created_at: new Date().toISOString(),
       };
 
       db.users[newUserId] = newUser;

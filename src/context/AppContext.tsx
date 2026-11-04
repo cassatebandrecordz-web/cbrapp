@@ -81,6 +81,8 @@ const DEFAULT_USER: UserProfile = {
 interface AppContextType {
   user: UserProfile;
   isLoggedIn: boolean;
+  login: (params: { identifier: string; password?: string; device?: string; loginLocation?: string }) => Promise<{ success: boolean; error?: string }>;
+  register: (params: { name: string; email: string; password?: string; phone?: string; device?: string; loginLocation?: string }) => Promise<{ success: boolean; error?: string }>;
   loginDemo: (override?: Partial<UserProfile>) => void;
   logout: () => void;
   updateProfile: (updates: Partial<UserProfile>) => void;
@@ -140,7 +142,52 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS);
   const [bookingDraft, setBookingDraft] = useState<BookingDraft>(DEFAULT_BOOKING_DRAFT);
 
-  const isLoggedIn = true;
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // ── Database Login & Registration ──
+  const login = async (params: { identifier: string; password?: string; device?: string; loginLocation?: string }) => {
+    try {
+      const res = await StudioApi.login(params.identifier, params.password, params.device, params.loginLocation);
+      if (res.success && res.user) {
+        setUser({
+          id: res.user.id || `usr-${Date.now().toString().slice(-5)}`,
+          name: res.user.name || params.identifier.split('@')[0],
+          email: res.user.email || params.identifier,
+          phone: res.user.phone || '+91 90252 53695',
+          company: res.user.company || 'Studio Producer',
+          role: res.user.role || 'Studio Client',
+          isAdmin: Boolean(res.user.is_admin || res.user.isAdmin),
+        });
+        setIsLoggedIn(true);
+        return { success: true };
+      }
+      return { success: false, error: res.error || 'Invalid credentials' };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  };
+
+  const register = async (params: { name: string; email: string; password?: string; phone?: string; device?: string; loginLocation?: string }) => {
+    try {
+      const res = await StudioApi.register(params);
+      if (res.success && res.user) {
+        setUser({
+          id: res.user.id || `usr-${Date.now().toString().slice(-5)}`,
+          name: res.user.name || params.name,
+          email: res.user.email || params.email,
+          phone: res.user.phone || params.phone || '+91 90252 53695',
+          company: 'Studio Producer',
+          role: 'Studio Client',
+          isAdmin: false,
+        });
+        setIsLoggedIn(true);
+        return { success: true };
+      }
+      return { success: false, error: res.error || 'Registration failed' };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  };
 
   // ── Sync with Supabase Database ──
   const refreshBookings = useCallback(async () => {
@@ -174,9 +221,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const loginDemo = (override?: Partial<UserProfile>) => {
     setUser((prev) => ({ ...prev, ...override }));
+    setIsLoggedIn(true);
   };
 
   const logout = () => {
+    setIsLoggedIn(false);
     setUser(DEFAULT_USER);
   };
 
@@ -340,6 +389,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       value={{
         user,
         isLoggedIn,
+        login,
+        register,
         loginDemo,
         logout,
         updateProfile,

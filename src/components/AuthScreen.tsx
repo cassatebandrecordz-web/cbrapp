@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   useWindowDimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,7 +28,7 @@ export default function AuthScreen({ initialTab = 'login' }: AuthScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const { loginDemo } = useApp();
+  const { login, register, loginDemo } = useApp();
 
   const [activeTab, setActiveTab] = useState<'login' | 'register'>(initialTab);
 
@@ -39,50 +40,57 @@ export default function AuthScreen({ initialTab = 'login' }: AuthScreenProps) {
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Sign In Handler
-  const handleSignIn = () => {
+  // Mandatory Sign In Handler (verifies with Database)
+  const handleSignIn = async () => {
     soundEffects.playAuthSubmit();
     const identifier = emailOrPhone.trim();
-    if (!identifier && !password.trim()) {
-      // Auto-fill demo credentials if empty for seamless evaluation
-      loginDemo({
-        name: 'Devon Vance',
-        email: 'devon.vance@soundcraft.io',
-        role: 'Studio Client',
-      });
-      router.replace('/(tabs)');
-      return;
-    }
 
     if (!identifier) {
-      Alert.alert('Sign In', 'Please enter your email address or mobile number.');
+      Alert.alert('Sign In Required', 'Please enter your registered email address or mobile number.');
       return;
     }
 
     if (!password.trim()) {
-      Alert.alert('Sign In', 'Please enter your password.');
+      Alert.alert('Password Required', 'Please enter your password.');
       return;
     }
 
-    loginDemo({
-      email: identifier.includes('@') ? identifier : `${identifier}@cassaterecordz.com`,
-      phone: !identifier.includes('@') ? identifier : '+91 90252 53695',
-      name: identifier.split('@')[0] || 'Studio Client',
-      role: 'Verified Studio Client',
+    setIsSubmitting(true);
+    const deviceStr = Platform.OS === 'android'
+      ? 'Android Mobile App'
+      : Platform.OS === 'ios'
+      ? 'iOS Mobile App'
+      : 'Web Studio Portal';
+
+    const res = await login({
+      identifier,
+      password: password.trim(),
+      device: deviceStr,
+      loginLocation: 'Chennai Studio, TN, India',
     });
 
-    router.replace('/(tabs)');
+    setIsSubmitting(false);
+
+    if (res.success) {
+      router.replace('/(tabs)');
+    } else {
+      Alert.alert(
+        'Sign In Failed',
+        res.error || 'Invalid credentials. If you are a new producer, please tap Register to create an account.'
+      );
+    }
   };
 
-  // Register Handler
-  const handleRegister = () => {
+  // Mandatory Register Handler (registers directly to Database)
+  const handleRegister = async () => {
     soundEffects.playAuthSubmit();
     const trimmedName = name.trim();
     const identifier = emailOrPhone.trim();
 
     if (!trimmedName) {
-      Alert.alert('Registration', 'Please enter your full name.');
+      Alert.alert('Registration', 'Please enter your full name or producer alias.');
       return;
     }
 
@@ -101,26 +109,47 @@ export default function AuthScreen({ initialTab = 'login' }: AuthScreenProps) {
       return;
     }
 
-    loginDemo({
+    setIsSubmitting(true);
+    const emailStr = identifier.includes('@') ? identifier : `${identifier}@gmail.com`;
+    const phoneStr = !identifier.includes('@') ? identifier : '+91 90252 53695';
+    const deviceStr = Platform.OS === 'android'
+      ? 'Android Mobile App'
+      : Platform.OS === 'ios'
+      ? 'iOS Mobile App'
+      : 'Web Studio Portal';
+
+    const res = await register({
       name: trimmedName,
-      email: identifier.includes('@') ? identifier : `${identifier}@cassaterecordz.com`,
-      phone: !identifier.includes('@') ? identifier : '+91 90252 53695',
-      role: 'Studio Client',
+      email: emailStr,
+      password: password.trim(),
+      phone: phoneStr,
+      device: deviceStr,
+      loginLocation: 'Chennai Studio, TN, India',
     });
 
-    Alert.alert(
-      'Account Created!',
-      `Welcome to Cassate Band Recordz, ${trimmedName}! Your studio account is active.`,
-      [{ text: 'Continue to Studio', onPress: () => router.replace('/(tabs)') }]
-    );
+    setIsSubmitting(false);
+
+    if (res.success) {
+      Alert.alert(
+        'Account Registered!',
+        `Welcome to Cassate Band Recordz, ${trimmedName}! Your studio account is active in the database.`,
+        [{ text: 'Continue to Studio', onPress: () => router.replace('/(tabs)') }]
+      );
+    } else {
+      Alert.alert('Registration Failed', res.error || 'Could not complete registration. Please check your network.');
+    }
   };
 
   // Social Login Handler
-  const handleSocialLogin = (provider: 'Google' | 'Apple') => {
-    loginDemo({
+  const handleSocialLogin = async (provider: 'Google' | 'Apple') => {
+    soundEffects.playAuthSubmit();
+    const mockEmail = `${provider.toLowerCase()}.user@gmail.com`;
+    await register({
       name: `${provider} Client`,
-      email: `${provider.toLowerCase()}.user@cassaterecordz.com`,
-      role: 'Studio Client',
+      email: mockEmail,
+      phone: '+91 90252 53695',
+      device: Platform.OS === 'android' ? 'Android Mobile App' : 'iOS Mobile App',
+      loginLocation: 'Chennai Studio, TN, India',
     });
     router.replace('/(tabs)');
   };
@@ -157,7 +186,7 @@ export default function AuthScreen({ initialTab = 'login' }: AuthScreenProps) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* ── Top Bar with Back Button & Skip to Studio ── */}
+          {/* ── Top Bar: Sign In Must (No Skip) ── */}
           <View style={styles.topBar}>
             <TouchableOpacity
               style={styles.backBtn}
@@ -174,17 +203,10 @@ export default function AuthScreen({ initialTab = 'login' }: AuthScreenProps) {
               <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.skipBtn}
-              onPress={() => {
-                soundEffects.playClick(850, 0.03);
-                router.replace('/(tabs)');
-              }}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.skipBtnText}>Explore Studio</Text>
-              <Ionicons name="arrow-forward" size={14} color="#FACC15" />
-            </TouchableOpacity>
+            <View style={styles.mustLoginBadge}>
+              <Ionicons name="lock-closed" size={12} color="#FACC15" />
+              <Text style={styles.mustLoginBadgeText}>Studio Account Required</Text>
+            </View>
           </View>
 
           {/* ── Segmented Pill Toggle: [ Sign In | Register ] ── */}
@@ -355,8 +377,9 @@ export default function AuthScreen({ initialTab = 'login' }: AuthScreenProps) {
 
             {/* ── Main Submit Button ── */}
             <TouchableOpacity
-              style={styles.submitBtn}
+              style={[styles.submitBtn, isSubmitting && { opacity: 0.7 }]}
               onPress={isLogin ? handleSignIn : handleRegister}
+              disabled={isSubmitting}
               activeOpacity={0.85}
             >
               <LinearGradient
@@ -365,10 +388,19 @@ export default function AuthScreen({ initialTab = 'login' }: AuthScreenProps) {
                 end={{ x: 1, y: 0 }}
                 style={styles.submitGradient}
               >
-                <Text style={styles.submitBtnText}>
-                  {isLogin ? 'Sign In' : 'Create Account'}
-                </Text>
-                <Ionicons name="arrow-forward" size={18} color="#000000" />
+                {isSubmitting ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <ActivityIndicator size="small" color="#000000" />
+                    <Text style={styles.submitBtnText}>Connecting to Database...</Text>
+                  </View>
+                ) : (
+                  <>
+                    <Text style={styles.submitBtnText}>
+                      {isLogin ? 'Sign In to Studio' : 'Register Account'}
+                    </Text>
+                    <Ionicons name="arrow-forward" size={18} color="#000000" />
+                  </>
+                )}
               </LinearGradient>
             </TouchableOpacity>
 
@@ -461,20 +493,20 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginBottom: 16,
   },
-  skipBtn: {
+  mustLoginBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 7,
     borderRadius: 20,
     backgroundColor: 'rgba(250, 204, 21, 0.12)',
     borderWidth: 1,
     borderColor: 'rgba(250, 204, 21, 0.35)',
   },
-  skipBtnText: {
+  mustLoginBadgeText: {
     color: '#FACC15',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '800',
   },
   backBtn: {

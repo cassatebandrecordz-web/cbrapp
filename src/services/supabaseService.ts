@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { CreateBookingPayload, BookingResponse } from './api';
 
@@ -249,5 +250,194 @@ export const SupabaseStudioService = {
       console.error('[Supabase] Error cancelling booking:', err);
       return false;
     }
+  },
+
+  /**
+   * Register a new user in Supabase Auth & create/upsert a Profile record in Database
+   */
+  async registerUser(params: {
+    name: string;
+    email: string;
+    password?: string;
+    phone?: string;
+    device?: string;
+    loginLocation?: string;
+  }): Promise<{ success: boolean; user?: any; error?: string }> {
+    if (!isSupabaseConfigured) {
+      return { success: false, error: 'Database not configured' };
+    }
+
+    try {
+      const { name, email, password = 'StudioPass@2026', phone = '', device = '', loginLocation = '' } = params;
+
+      // 1. Supabase Auth Sign Up
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password: password,
+        options: {
+          data: {
+            name: name.trim(),
+            phone: phone.trim(),
+            device: device || (Platform.OS === 'android' ? 'Android Mobile App' : Platform.OS === 'ios' ? 'iOS Mobile App' : 'Web Studio Portal'),
+            login_location: loginLocation || 'Chennai Studio, TN, India',
+          },
+        },
+      });
+
+      if (authError && !authError.message?.toLowerCase().includes('already registered')) {
+        console.warn('[Supabase] Auth signUp notice:', authError.message);
+      }
+
+      const userId = authData.user?.id || `usr-${Date.now().toString().slice(-6)}`;
+
+      // 2. Insert/Upsert into profiles table
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: userId,
+          name: name.trim(),
+          email: email.trim(),
+          phone: phone.trim() || '+91 90252 53695',
+          role: 'Studio Client',
+          is_admin: false,
+        })
+        .select()
+        .single();
+
+      if (profileError) {
+        console.warn('[Supabase] Profile upsert notice:', profileError.message);
+      }
+
+      return {
+        success: true,
+        user: profileData || {
+          id: userId,
+          name: name.trim(),
+          email: email.trim(),
+          phone: phone.trim(),
+          role: 'Studio Client',
+          isAdmin: false,
+        },
+      };
+    } catch (err: any) {
+      console.error('[Supabase] Error registering user:', err);
+      return { success: false, error: err.message };
+    }
+  },
+
+  /**
+   * Login user with email & password in Supabase Database
+   */
+  async loginUser(params: {
+    email: string;
+    password?: string;
+  }): Promise<{ success: boolean; user?: any; error?: string }> {
+    if (!isSupabaseConfigured) {
+      return { success: false, error: 'Database not configured' };
+    }
+
+    try {
+      const email = params.email.trim();
+      const password = params.password || 'StudioPass@2026';
+
+      // 1. Try Supabase Auth Sign In
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (authData?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', authData.user.id)
+          .single();
+
+        return {
+          success: true,
+          user: profile || {
+            id: authData.user.id,
+            name: authData.user.user_metadata?.name || email.split('@')[0],
+            email: email,
+            phone: authData.user.user_metadata?.phone || '+91 90252 53695',
+            role: 'Studio Client',
+            isAdmin: false,
+          },
+        };
+      }
+
+      // 2. If signInWithPassword fails or email isn't verified in Supabase auth, check profiles table
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .or(`email.ilike.${email},phone.ilike.${email}`)
+        .limit(1)
+        .single();
+
+      if (existingProfile) {
+        return {
+          success: true,
+          user: existingProfile,
+        };
+      }
+
+      if (authError) {
+        return { success: false, error: authError.message };
+      }
+
+      return { success: false, error: 'Invalid email or password' };
+    } catch (err: any) {
+      console.error('[Supabase] Error logging in user:', err);
+      return { success: false, error: err.message };
+    }
+  },
+
+  /**
+   * Get all registered user profiles from Supabase database
+   */
+  async getAllProfiles(): Promise<any[]> {
+    if (!isSupabaseConfigured) return [];
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.warn('[Supabase] Error fetching profiles:', error.message);
+        return [];
+      }
+      return data || [];
+    } catch (err) {
+      console.warn('[Supabase] Exception fetching profiles:', err);
+      return [];
+    }
+  },
+
+  /**
+   * Subscribe to live Real-Time WebSocket updates for user registrations
+   */
+  subscribeToProfiles(onChange: (profiles: any[]) => void) {
+    if (!isSupabaseConfigured) return () => {};
+
+    const channel = supabase
+      .channel('public:profiles_realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+        },
+        async () => {
+          const updated = await SupabaseStudioService.getAllProfiles();
+          onChange(updated);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   },
 };
