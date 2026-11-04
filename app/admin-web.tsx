@@ -757,7 +757,7 @@ export default function WebAdminPortalScreen() {
             >
               <Ionicons
                 name="grid"
-                size={18}
+                size={16}
                 color={activeMenu === 'dashboard' ? '#000000' : '#9CA3AF'}
               />
               <Text
@@ -776,7 +776,7 @@ export default function WebAdminPortalScreen() {
             >
               <Ionicons
                 name="calendar-outline"
-                size={18}
+                size={16}
                 color={activeMenu === 'bookings' ? '#000000' : '#9CA3AF'}
               />
               <Text
@@ -795,7 +795,7 @@ export default function WebAdminPortalScreen() {
             >
               <Ionicons
                 name="folder-outline"
-                size={18}
+                size={16}
                 color={activeMenu === 'projects' ? '#000000' : '#9CA3AF'}
               />
               <Text
@@ -814,7 +814,7 @@ export default function WebAdminPortalScreen() {
             >
               <Ionicons
                 name="card-outline"
-                size={18}
+                size={16}
                 color={activeMenu === 'payments' ? '#000000' : '#9CA3AF'}
               />
               <Text
@@ -833,7 +833,7 @@ export default function WebAdminPortalScreen() {
             >
               <Ionicons
                 name="people-outline"
-                size={18}
+                size={16}
                 color={activeMenu === 'customers' ? '#000000' : '#9CA3AF'}
               />
               <Text
@@ -852,7 +852,7 @@ export default function WebAdminPortalScreen() {
             >
               <Ionicons
                 name="sparkles-outline"
-                size={18}
+                size={16}
                 color={activeMenu === 'services' ? '#000000' : '#9CA3AF'}
               />
               <Text
@@ -871,7 +871,7 @@ export default function WebAdminPortalScreen() {
             >
               <Ionicons
                 name="time-outline"
-                size={18}
+                size={16}
                 color={activeMenu === 'availability' ? '#000000' : '#9CA3AF'}
               />
               <Text
@@ -890,7 +890,7 @@ export default function WebAdminPortalScreen() {
             >
               <Ionicons
                 name="phone-portrait-outline"
-                size={18}
+                size={16}
                 color={activeMenu === 'content' ? '#000000' : '#9CA3AF'}
               />
               <Text
@@ -912,7 +912,7 @@ export default function WebAdminPortalScreen() {
             >
               <Ionicons
                 name="bar-chart-outline"
-                size={18}
+                size={16}
                 color={activeMenu === 'reports' ? '#000000' : '#9CA3AF'}
               />
               <Text
@@ -931,7 +931,7 @@ export default function WebAdminPortalScreen() {
             >
               <Ionicons
                 name="settings-outline"
-                size={18}
+                size={16}
                 color={activeMenu === 'settings' ? '#000000' : '#9CA3AF'}
               />
               <Text
@@ -2549,27 +2549,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
 
-  // ── Sidebar ──
+  // ── Sidebar (Medium-Sized Compact Width) ──
   sidebar: {
-    width: 200,
+    width: 158,
     backgroundColor: '#0E0E16',
     borderRightWidth: 1,
     borderRightColor: '#1A1A26',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 6,
   },
   sidebarHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 8,
-    marginBottom: 8,
+    paddingHorizontal: 6,
+    marginBottom: 6,
   },
   sidebarHeaderHeading: {
     color: '#6B7280',
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '900',
-    letterSpacing: 1,
+    letterSpacing: 0.8,
   },
   sidebarCollapseSmallBtn: {
     padding: 2,
@@ -2577,18 +2577,18 @@ const styles = StyleSheet.create({
   sidebarItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginBottom: 4,
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    marginBottom: 3,
   },
   sidebarItemActive: {
     backgroundColor: '#FACC15',
   },
   sidebarText: {
     color: '#9CA3AF',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
   },
   sidebarTextActive: {
@@ -2597,14 +2597,14 @@ const styles = StyleSheet.create({
   },
   newBadge: {
     backgroundColor: '#EF4444',
-    paddingHorizontal: 5,
+    paddingHorizontal: 4,
     paddingVertical: 1,
-    borderRadius: 6,
+    borderRadius: 4,
     marginLeft: 'auto',
   },
   newBadgeText: {
     color: '#FFFFFF',
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: '900',
   },
 
