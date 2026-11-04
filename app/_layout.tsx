@@ -133,13 +133,13 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ErrorBoundary>
         <AppProvider>
-          <ExpoStatusBar style="light" />
+          <ExpoStatusBar style="dark" />
           <View style={styles.rootOuter}>
             <View style={[styles.rootInner, isWebDesktop && styles.desktopFrame]}>
               <Stack
                 screenOptions={{
                   headerShown: false,
-                  contentStyle: { backgroundColor: '#07070A' },
+                  contentStyle: { backgroundColor: '#FBFCF8' },
                   animation: 'slide_from_right',
                   animationDuration: 280,
                 }}
@@ -187,7 +187,7 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   rootOuter: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: '#FBFCF8',
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     height: '100%',
-    backgroundColor: '#07070A',
+    backgroundColor: '#FBFCF8',
   },
   desktopFrame: {
     maxWidth: 440,
@@ -205,10 +205,10 @@ const styles = StyleSheet.create({
     height: '100%',
     borderLeftWidth: 1,
     borderRightWidth: 1,
-    borderColor: '#1C1C28',
+    borderColor: '#E5E7EB',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.9,
-    shadowRadius: 30,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
   },
 });

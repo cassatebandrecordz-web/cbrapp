@@ -1,151 +1,99 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  ImageBackground,
   Image,
-  TouchableOpacity,
-  useWindowDimensions,
-  Platform,
   ActivityIndicator,
+  Animated,
+  TouchableOpacity,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
-import { soundEffects } from '../src/utils/soundEffects';
 
-export default function GetStartedScreen() {
+export default function InitialLoadingScreen() {
   const router = useRouter();
-  const { width, height } = useWindowDimensions();
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  const handleEnterApp = () => {
-    soundEffects.playGetStarted();
+  useEffect(() => {
+    // Smooth subtle fade in
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+
+    // Fast, seamless transition directly to Home page
+    const timer = setTimeout(() => {
+      router.replace('/(tabs)');
+    }, 450);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleInstantEnter = () => {
     router.replace('/(tabs)');
   };
 
-  // Poster natural aspect ratio: 577 / 1024 (~0.563)
-  const POSTER_RATIO = 577 / 1024;
-  const isDesktopWeb = Platform.OS === 'web' && width > 500;
-
-  // On wide PC / desktop screens, size container proportionally to window height; on mobile, fill full viewport
-  const containerWidth = isDesktopWeb
-    ? Math.min(480, Math.round(height * POSTER_RATIO))
-    : '100%';
-
   return (
-    <View style={styles.outerContainer}>
-      <StatusBar style="light" />
-
-      {/* Luxury Studio Ambient Gradient Backdrop */}
-      <LinearGradient
-        colors={['#05040A', '#140F04', '#05040A']}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-        style={StyleSheet.absoluteFillObject}
-      />
-
-      {/* Immediate Brand Fallback while background poster loads */}
-      {!imageLoaded && (
-        <View style={styles.loadingFallback}>
-          <Image
-            source={require('../assets/images/cassate_logo.png')}
-            style={styles.fallbackLogo}
-            resizeMode="contain"
-          />
-          <ActivityIndicator size="large" color="#FACC15" style={{ marginTop: 24 }} />
-          <Text style={styles.fallbackText}>Loading Cassate Band Recordz...</Text>
-        </View>
-      )}
-
-      {/* Main Banner Container (Seamless & 100% Borderless) */}
-      <View
-        style={[
-          styles.posterContainer,
-          {
-            width: containerWidth,
-            height: '100%',
-          },
-        ]}
-      >
-        <ImageBackground
-          source={require('../assets/images/welcome_poster.png')}
-          style={styles.posterImage}
+    <TouchableOpacity
+      style={styles.container}
+      onPress={handleInstantEnter}
+      activeOpacity={1}
+    >
+      <StatusBar style="dark" />
+      <Animated.View style={[styles.brandBox, { opacity: fadeAnim }]}>
+        <Image
+          source={require('../assets/images/cassate_logo.png')}
+          style={styles.logo}
           resizeMode="contain"
-          onLoad={() => setImageLoaded(true)}
-        >
-          {/* Entire professional banner is an interactive touch surface to enter studio */}
-          <TouchableOpacity
-            style={styles.fullScreenTouch}
-            onPress={handleEnterApp}
-            activeOpacity={0.96}
-            accessibilityRole="button"
-            accessibilityLabel="Get Started - Enter Cassate Band Recordz"
-          >
-            {/* Bottom hotspot matching the Get Started button area on the banner */}
-            <View style={styles.getStartedHotspot} />
-          </TouchableOpacity>
-        </ImageBackground>
-      </View>
-    </View>
+        />
+        <View style={styles.spinnerRow}>
+          <ActivityIndicator size="small" color="#CA8A04" />
+          <Text style={styles.loadingText}>CASSATE BAND RECORDZ</Text>
+        </View>
+        <Text style={styles.tagline}>POST PRODUCTION STUDIO</Text>
+      </Animated.View>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  outerContainer: {
+  container: {
     flex: 1,
-    backgroundColor: '#05040A',
+    backgroundColor: '#FBFCF8', // Pearl White Canvas matching Home page
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
     height: '100%',
   },
-  loadingFallback: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#05040A',
+  brandBox: {
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 2,
+    paddingHorizontal: 20,
   },
-  fallbackLogo: {
-    width: 210,
-    height: 72,
+  logo: {
+    width: 220,
+    height: 75,
+    marginBottom: 18,
   },
-  fallbackText: {
-    color: '#D1D5DB',
-    fontSize: 13,
+  spinnerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+  },
+  loadingText: {
+    color: '#854D0E',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+  },
+  tagline: {
+    color: '#9CA3AF',
+    fontSize: 9,
     fontWeight: '700',
-    marginTop: 16,
-    letterSpacing: 0.5,
-  },
-  posterContainer: {
-    overflow: 'hidden',
-    position: 'relative',
-    backgroundColor: '#05040A',
-    width: '100%',
-    height: '100%',
-    alignSelf: 'center',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 0,
-  },
-  posterImage: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
-  fullScreenTouch: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
-  getStartedHotspot: {
-    width: '84%',
-    height: 54,
-    marginBottom: Platform.OS === 'android' ? 36 : 28,
+    letterSpacing: 2,
+    marginTop: 8,
   },
 });
