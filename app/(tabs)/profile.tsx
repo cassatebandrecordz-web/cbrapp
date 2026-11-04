@@ -262,6 +262,26 @@ export default function ProfileScreen() {
               <Text style={styles.menuText}>Contact Studio Reception</Text>
               <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
             </TouchableOpacity>
+
+            <View style={styles.divider} />
+
+            <TouchableOpacity
+              style={styles.menuRow}
+              onPress={() => {
+                soundEffects.playClick(850, 0.03);
+                router.push('/admin-web');
+              }}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.menuIconCircle, { backgroundColor: '#FEF3C7' }]}>
+                <Ionicons name="shield-checkmark" size={18} color="#D97706" />
+              </View>
+              <Text style={styles.menuText}>Admin Studio Panel & Banners</Text>
+              <View style={[styles.menuCountBadge, { backgroundColor: '#FEF3C7' }]}>
+                <Text style={[styles.menuCountText, { color: '#B45309' }]}>Admin</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+            </TouchableOpacity>
           </View>
 
           {/* ── 4. Connect With Us Section ── */}
