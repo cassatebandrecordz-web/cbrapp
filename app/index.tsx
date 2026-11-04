@@ -59,11 +59,10 @@ export default function GetStartedScreen() {
         </View>
       )}
 
-      {/* Main Banner Container */}
+      {/* Main Banner Container (Seamless & 100% Borderless) */}
       <View
         style={[
           styles.posterContainer,
-          isDesktopWeb && styles.desktopPosterContainer,
           {
             width: containerWidth,
             height: '100%',
@@ -129,16 +128,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  desktopPosterContainer: {
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(234, 179, 8, 0.25)',
-    shadowColor: '#EAB308',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 18,
-    elevation: 8,
+    borderWidth: 0,
   },
   posterImage: {
     width: '100%',
