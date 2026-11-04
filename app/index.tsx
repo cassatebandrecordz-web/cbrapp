@@ -83,13 +83,13 @@ export default function InitialEntranceScreen() {
       duration: 160,
       useNativeDriver: true,
     }).start(() => {
-      // Smooth fade into tabs
+      // Smooth fade into Login Route (as requested: reverted login page in app flow)
       Animated.timing(posterFadeAnim, {
         toValue: 0,
         duration: 180,
         useNativeDriver: true,
       }).start(() => {
-        router.replace('/(tabs)');
+        router.replace('/login');
       });
     });
   };

@@ -157,7 +157,7 @@ export default function AuthScreen({ initialTab = 'login' }: AuthScreenProps) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* ── Top Bar with Back Button ── */}
+          {/* ── Top Bar with Back Button & Skip to Studio ── */}
           <View style={styles.topBar}>
             <TouchableOpacity
               style={styles.backBtn}
@@ -172,6 +172,18 @@ export default function AuthScreen({ initialTab = 'login' }: AuthScreenProps) {
               activeOpacity={0.7}
             >
               <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.skipBtn}
+              onPress={() => {
+                soundEffects.playClick(850, 0.03);
+                router.replace('/(tabs)');
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.skipBtnText}>Explore Studio</Text>
+              <Ionicons name="arrow-forward" size={14} color="#FACC15" />
             </TouchableOpacity>
           </View>
 
@@ -445,9 +457,25 @@ const styles = StyleSheet.create({
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-start',
+    justifyContent: 'space-between',
     paddingVertical: 10,
     marginBottom: 16,
+  },
+  skipBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(250, 204, 21, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(250, 204, 21, 0.35)',
+  },
+  skipBtnText: {
+    color: '#FACC15',
+    fontSize: 12,
+    fontWeight: '800',
   },
   backBtn: {
     width: 40,

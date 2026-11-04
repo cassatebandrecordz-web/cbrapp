@@ -5,6 +5,7 @@ import { SupabaseStudioService } from './supabaseService';
 // Detect API base URL:
 // In production on web: uses same origin (e.g. https://venerable-marigold-a035e7.netlify.app)
 // In local dev on web: prefers same origin or localhost:5001 fallback
+// On native mobile (Android/iOS): points directly to the live Netlify cloud backend
 const getApiBaseUrl = (): string => {
   if (Platform.OS === 'web') {
     if (typeof window !== 'undefined' && window.location?.origin) {
@@ -14,7 +15,8 @@ const getApiBaseUrl = (): string => {
       return `${window.location.origin}/api`;
     }
   }
-  return 'http://localhost:5001/api';
+  // Mobile Android/iOS APK or cloud fallback
+  return 'https://venerable-marigold-a035e7.netlify.app/api';
 };
 
 const API_BASE = getApiBaseUrl();

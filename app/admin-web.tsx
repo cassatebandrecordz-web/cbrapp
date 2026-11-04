@@ -1,493 +1,976 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform, Image, Linking } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  Platform,
+  Image,
+  TextInput,
+  Switch,
+  Modal,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../src/constants/theme';
-import { GlowCard } from '../src/components/GlowCard';
 import { useApp } from '../src/context/AppContext';
+
+// Mock User Logins Database for Excel Export
+interface UserLoginRecord {
+  id: string;
+  name: string;
+  email: string;
+  passwordDisplay: string;
+  phone: string;
+  device: string;
+  loginLocation: string;
+  lastLogin: string;
+  totalBookings: number;
+  status: 'Active' | 'Verified';
+}
+
+const INITIAL_USER_LOGINS: UserLoginRecord[] = [
+  {
+    id: 'USR-1082',
+    name: 'Arjun Kumar',
+    email: 'arjun.movies@gmail.com',
+    passwordDisplay: 'StudioPass@2026',
+    phone: '+91 98401 23456',
+    device: 'Android 14 (Samsung Galaxy S24 Ultra)',
+    loginLocation: 'Chennai, Tamil Nadu, India (IP: 157.48.21.94)',
+    lastLogin: '05-Nov-2026 01:45 AM',
+    totalBookings: 8,
+    status: 'Verified',
+  },
+  {
+    id: 'USR-1083',
+    name: 'Devon Vance',
+    email: 'devon.vance@soundcraft.io',
+    passwordDisplay: 'Cassate#9042',
+    phone: '+91 90252 53695',
+    device: 'Android 14 (Google Pixel 8 Pro)',
+    loginLocation: 'Chennai Central, Tamil Nadu (IP: 49.37.112.4)',
+    lastLogin: '05-Nov-2026 01:20 AM',
+    totalBookings: 4,
+    status: 'Verified',
+  },
+  {
+    id: 'USR-1084',
+    name: 'Priya Sharma',
+    email: 'priya.cinema@vibe.in',
+    passwordDisplay: 'DubbingKing$88',
+    phone: '+91 94440 98765',
+    device: 'iOS 17.5 (iPhone 15 Pro Max)',
+    loginLocation: 'Coimbatore, Tamil Nadu (IP: 103.24.188.12)',
+    lastLogin: '04-Nov-2026 11:15 PM',
+    totalBookings: 6,
+    status: 'Verified',
+  },
+  {
+    id: 'USR-1085',
+    name: 'Karthik Raja',
+    email: 'karthik.audio@soundhouse.com',
+    passwordDisplay: 'ProducerPro!24',
+    phone: '+91 97910 54321',
+    device: 'Windows 11 (Chrome Desktop 130)',
+    loginLocation: 'Madurai, Tamil Nadu (IP: 117.200.45.89)',
+    lastLogin: '04-Nov-2026 08:30 PM',
+    totalBookings: 12,
+    status: 'Verified',
+  },
+  {
+    id: 'USR-1086',
+    name: 'Studio Client Guest',
+    email: 'client@cassatebandrecordz.com',
+    passwordDisplay: 'ClientPass@123',
+    phone: '+91 90252 53695',
+    device: 'Android 13 (OnePlus 11R 5G)',
+    loginLocation: 'Chennai Studio, TN (IP: 157.48.21.94)',
+    lastLogin: '05-Nov-2026 01:50 AM',
+    totalBookings: 2,
+    status: 'Active',
+  },
+];
 
 export default function WebAdminPortalScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { bookings, projects, cancelBooking, updateProjectProgress } = useApp();
+  const { bookings, projects } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'bookings' | 'projects' | 'clients' | 'invoices'>('bookings');
-  const [bookingFilter, setBookingFilter] = useState<'all' | 'confirmed' | 'pending'>('all');
-  const [projectFilter, setProjectFilter] = useState<'all' | 'review' | 'progress'>('all');
-  const [actionNotice, setActionNotice] = useState<string | null>(null);
+  // Navigation State
+  const [activeMenu, setActiveMenu] = useState<
+    'dashboard' | 'bookings' | 'projects' | 'payments' | 'customers' | 'services' | 'availability' | 'content' | 'reports' | 'settings'
+  >('dashboard');
 
+  // Search State
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // App Banner Manager State (matches right column of mockup)
+  const [bannerSlides, setBannerSlides] = useState([
+    {
+      id: 'dubbing',
+      title: 'Professional Dubbing Services',
+      sub: 'Film | Web Series | Ads | Voice Over',
+      published: true,
+      badge: 'Dubbing Studio',
+    },
+    {
+      id: 'vo',
+      title: 'Voice Over Recording',
+      sub: 'Multi-lingual Voice Artists & High-End Microphones',
+      published: true,
+      badge: 'Studio B',
+    },
+    {
+      id: 'post',
+      title: 'Post Production Suite',
+      sub: 'Sound Design, Mixing & Video Finishing',
+      published: false,
+      badge: 'Suite C',
+    },
+  ]);
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+
+  // User Logins State
+  const [userLogins, setUserLogins] = useState<UserLoginRecord[]>(INITIAL_USER_LOGINS);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportedCsvString, setExportedCsvString] = useState('');
+
+  // Action Notice Toast
+  const [notice, setNotice] = useState<string | null>(null);
   const showNotice = (msg: string) => {
-    setActionNotice(msg);
-    setTimeout(() => setActionNotice(null), 3500);
+    setNotice(msg);
+    setTimeout(() => setNotice(null), 3500);
   };
 
-  const handleApprove = (code: string) => {
-    showNotice(`Booking #${code} has been marked APPROVED & studio pass sent to client.`);
+  // Toggle Banner Publish State
+  const handleToggleBanner = (id: string) => {
+    setBannerSlides((prev) =>
+      prev.map((b) => (b.id === id ? { ...b, published: !b.published } : b))
+    );
   };
 
-  const handleCheckIn = (code: string) => {
-    showNotice(`Client for Booking #${code} has been checked into Studio A booth.`);
+  // Publish to App Handler
+  const handlePublishBannersToApp = () => {
+    showNotice('Banners published live! Mobile app carousel updated successfully.');
+    Alert.alert('App Banners Published', 'Mobile app banner carousel is now synced with live Admin settings.');
   };
 
-  const filteredBookings = bookings.filter((b) => {
-    if (bookingFilter === 'confirmed') return b.status === 'Confirmed';
-    if (bookingFilter === 'pending') return b.status !== 'Confirmed';
-    return true;
-  });
+  // Export User Logins to Excel (CSV)
+  const handleExportUserLogins = () => {
+    // Generate standard CSV with UTF-8 BOM so Microsoft Excel opens it seamlessly
+    const headers = [
+      'User ID',
+      'Customer Name',
+      'Email ID',
+      'Password / Credentials',
+      'Phone Number',
+      'Login Device & OS',
+      'Login Location (Where its login)',
+      'Last Login Timestamp',
+      'Total Bookings',
+      'Status',
+    ];
 
-  const filteredProjects = projects.filter((p) => {
-    if (projectFilter === 'review') return p.status === 'Review';
-    if (projectFilter === 'progress') return p.status === 'In Progress';
-    return true;
-  });
+    const rows = userLogins.map((u) => [
+      `"${u.id}"`,
+      `"${u.name}"`,
+      `"${u.email}"`,
+      `"${u.passwordDisplay}"`,
+      `"${u.phone}"`,
+      `"${u.device}"`,
+      `"${u.loginLocation}"`,
+      `"${u.lastLogin}"`,
+      u.totalBookings,
+      `"${u.status}"`,
+    ]);
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\r\n');
+    setExportedCsvString(csvContent);
+
+    if (Platform.OS === 'web') {
+      try {
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `cassate_user_logins_${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+        showNotice('Excel CSV file downloaded successfully!');
+      } catch (err) {
+        setShowExportModal(true);
+      }
+    } else {
+      setShowExportModal(true);
+    }
+  };
+
+  const activeBanner = bannerSlides[currentBannerIndex];
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Top Desktop Web Admin Navbar */}
-      <View style={styles.webNavbar}>
-        <View style={styles.navBrandCol}>
-          <TouchableOpacity onPress={() => router.push('/(tabs)')} style={styles.backToAppBtn}>
-            <Ionicons name="arrow-back" size={16} color={COLORS.primary} />
-            <Text style={styles.backToAppText}>Client App</Text>
+    <View style={[styles.container, { paddingTop: Platform.OS === 'web' ? 0 : insets.top }]}>
+      {/* ── TOP HEADER BAR ── */}
+      <View style={styles.topHeader}>
+        {/* Left: Brand Logo & Title */}
+        <View style={styles.headerLeftCol}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => router.push('/(tabs)')}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="phone-portrait-outline" size={16} color="#EAB308" />
+            <Text style={styles.backBtnText}>App</Text>
           </TouchableOpacity>
-          <View style={styles.brandDivider} />
-          <Image
-            source={require('../assets/images/brand_logo_boombox.png')}
-            style={{ width: 34, height: 25, marginRight: 4 }}
-            resizeMode="contain"
-          />
-          <View>
-            <Text style={styles.webPortalTitle}>CASSATE BAND RECORDZ</Text>
-            <Text style={styles.webPortalSub}>YOUR IDEAS, WE'VE DONE IT. • Web Admin Operations</Text>
+
+          <View style={styles.headerBrandBox}>
+            <Image
+              source={require('../assets/images/brand_logo_boombox.png')}
+              style={styles.soundwaveLogo}
+              resizeMode="contain"
+            />
+            <View>
+              <Text style={styles.headerBrandTitle}>CASSATE BAND RECORDZ</Text>
+              <Text style={styles.headerBrandSubtitle}>Post Production Studio</Text>
+            </View>
           </View>
         </View>
 
-        <View style={styles.navStatusCol}>
-          <View style={styles.hotlinePillGroup}>
-            <TouchableOpacity
-              style={styles.hotlinePillPrimary}
-              onPress={() => Linking.openURL('tel:9025253695').catch(() => {})}
-            >
-              <Ionicons name="call" size={11} color="#0A0A0E" />
-              <Text style={styles.hotlineTextPrimary}>9025253695</Text>
-              <View style={styles.primaryBadgeSmall}>
-                <Text style={styles.primaryBadgeSmallText}>PRIMARY</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.hotlinePillSecondary}
-              onPress={() => Linking.openURL('tel:7010012232').catch(() => {})}
-            >
-              <Ionicons name="call-outline" size={11} color={COLORS.primary} />
-              <Text style={styles.hotlineTextSecondary}>7010012232</Text>
-            </TouchableOpacity>
+        {/* Center: Admin Panel Title + Search Bar */}
+        <View style={styles.headerCenterCol}>
+          <View style={styles.adminTitleRow}>
+            <Text style={styles.adminTitleText}>Admin Panel</Text>
+            <View style={styles.studioPill}>
+              <Text style={styles.studioPillText}>Dubbing Studio</Text>
+            </View>
           </View>
 
-          <View style={styles.statusLivePill}>
-            <View style={styles.livePulseDot} />
-            <Text style={styles.statusLiveText}>3 SUITES ONLINE • DOLBY ATMOS 9.1.4</Text>
+          <View style={styles.searchBox}>
+            <Ionicons name="search" size={15} color="#6B7280" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search booking, customer, project..."
+              placeholderTextColor="#6B7280"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
           </View>
-          <View style={styles.adminUserPill}>
-            <Ionicons name="shield-checkmark" size={14} color={COLORS.primary} />
-            <Text style={styles.adminUserName}>Devon Vance (Admin)</Text>
+        </View>
+
+        {/* Right: Notifications & Super Admin Badge */}
+        <View style={styles.headerRightCol}>
+          <TouchableOpacity
+            style={styles.notifBtn}
+            onPress={() => showNotice('Studio notifications checked • 0 alerts')}
+          >
+            <Ionicons name="notifications-outline" size={18} color="#FFFFFF" />
+            <View style={styles.redBadgeDot} />
+          </TouchableOpacity>
+
+          <View style={styles.adminProfileBadge}>
+            <View style={styles.adminAvatar}>
+              <Text style={styles.adminAvatarText}>A</Text>
+            </View>
+            <View>
+              <Text style={styles.adminName}>Admin</Text>
+              <Text style={styles.adminRole}>Super Admin</Text>
+            </View>
           </View>
         </View>
       </View>
 
-      {/* Floating Action Notice Toast */}
-      {actionNotice && (
-        <View style={styles.toastNotice}>
-          <Ionicons name="checkmark-circle" size={18} color={COLORS.primary} />
-          <Text style={styles.toastText}>{actionNotice}</Text>
+      {/* ── NOTIFICATION TOAST ── */}
+      {notice && (
+        <View style={styles.noticeToast}>
+          <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+          <Text style={styles.noticeText}>{notice}</Text>
         </View>
       )}
 
-      <ScrollView
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 24 }]}
-        showsVerticalScrollIndicator={true}
-      >
-        {/* KPI Metric Cards Row (Studio Gold & White) */}
-        <View style={styles.kpiRow}>
-          <GlowCard style={styles.kpiCard} borderColor="#38321E">
-            <View style={styles.kpiHeader}>
-              <View style={[styles.kpiIconBox, { backgroundColor: 'rgba(234, 179, 8, 0.14)' }]}>
-                <Ionicons name="calendar" size={18} color={COLORS.primary} />
-              </View>
-              <Text style={styles.kpiBadge}>Today</Text>
-            </View>
-            <Text style={styles.kpiValue}>12</Text>
-            <Text style={styles.kpiLabel}>Today Bookings</Text>
-            <Text style={styles.kpiSub}>5 Dubbing • 4 VO • 3 Mixing</Text>
-          </GlowCard>
-
-          <GlowCard style={styles.kpiCard} borderColor="#1E2A38">
-            <View style={styles.kpiHeader}>
-              <View style={[styles.kpiIconBox, { backgroundColor: 'rgba(56, 189, 248, 0.14)' }]}>
-                <Ionicons name="pulse" size={18} color="#38BDF8" />
-              </View>
-              <Text style={[styles.kpiBadge, { color: '#38BDF8', borderColor: '#38BDF8' }]}>Active</Text>
-            </View>
-            <Text style={[styles.kpiValue, { color: '#38BDF8' }]}>8</Text>
-            <Text style={styles.kpiLabel}>Projects In Progress</Text>
-            <Text style={styles.kpiSub}>4 Cut • 3 Review • 1 QC</Text>
-          </GlowCard>
-
-          <GlowCard style={styles.kpiCard} borderColor="#1E382A">
-            <View style={styles.kpiHeader}>
-              <View style={[styles.kpiIconBox, { backgroundColor: 'rgba(16, 185, 129, 0.14)' }]}>
-                <Ionicons name="checkmark-done" size={18} color="#10B981" />
-              </View>
-              <Text style={[styles.kpiBadge, { color: '#10B981', borderColor: '#10B981' }]}>Completed</Text>
-            </View>
-            <Text style={[styles.kpiValue, { color: '#10B981' }]}>36</Text>
-            <Text style={styles.kpiLabel}>Delivered Masters</Text>
-            <Text style={styles.kpiSub}>100% On-time OTT delivery</Text>
-          </GlowCard>
-
-          <GlowCard style={styles.kpiCard} borderColor="#38321E">
-            <View style={styles.kpiHeader}>
-              <View style={[styles.kpiIconBox, { backgroundColor: 'rgba(234, 179, 8, 0.14)' }]}>
-                <Ionicons name="cash-outline" size={18} color={COLORS.primary} />
-              </View>
-              <Text style={styles.kpiBadge}>Revenue</Text>
-            </View>
-            <Text style={styles.kpiValue}>₹2,48,500</Text>
-            <Text style={styles.kpiLabel}>Month-to-Date</Text>
-            <Text style={styles.kpiSub}>18% GST Accounted</Text>
-          </GlowCard>
-        </View>
-
-        {/* Web Admin Portal Tabs Bar */}
-        <View style={styles.tabBar}>
+      {/* ── MAIN CONTENT WITH SIDEBAR & DASHBOARD ── */}
+      <View style={styles.mainLayout}>
+        {/* ── LEFT SIDEBAR ── */}
+        <ScrollView style={styles.sidebar} showsVerticalScrollIndicator={false}>
           <TouchableOpacity
-            style={[styles.tabBtn, activeTab === 'bookings' && styles.tabBtnActive]}
-            onPress={() => setActiveTab('bookings')}
-            activeOpacity={0.8}
+            style={[styles.sidebarItem, activeMenu === 'dashboard' && styles.sidebarItemActive]}
+            onPress={() => setActiveMenu('dashboard')}
+          >
+            <Ionicons
+              name="grid"
+              size={18}
+              color={activeMenu === 'dashboard' ? '#000000' : '#9CA3AF'}
+            />
+            <Text
+              style={[
+                styles.sidebarText,
+                activeMenu === 'dashboard' && styles.sidebarTextActive,
+              ]}
+            >
+              Dashboard
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.sidebarItem, activeMenu === 'bookings' && styles.sidebarItemActive]}
+            onPress={() => setActiveMenu('bookings')}
           >
             <Ionicons
               name="calendar-outline"
-              size={16}
-              color={activeTab === 'bookings' ? '#0A0A0E' : '#A1A1AA'}
+              size={18}
+              color={activeMenu === 'bookings' ? '#000000' : '#9CA3AF'}
             />
-            <Text style={[styles.tabBtnText, activeTab === 'bookings' && styles.tabBtnTextActive]}>
-              Studio Bookings Desk ({bookings.length})
+            <Text
+              style={[
+                styles.sidebarText,
+                activeMenu === 'bookings' && styles.sidebarTextActive,
+              ]}
+            >
+              Bookings
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.tabBtn, activeTab === 'projects' && styles.tabBtnActive]}
-            onPress={() => setActiveTab('projects')}
-            activeOpacity={0.8}
+            style={[styles.sidebarItem, activeMenu === 'projects' && styles.sidebarItemActive]}
+            onPress={() => setActiveMenu('projects')}
           >
             <Ionicons
-              name="film-outline"
-              size={16}
-              color={activeTab === 'projects' ? '#0A0A0E' : '#A1A1AA'}
+              name="folder-outline"
+              size={18}
+              color={activeMenu === 'projects' ? '#000000' : '#9CA3AF'}
             />
-            <Text style={[styles.tabBtnText, activeTab === 'projects' && styles.tabBtnTextActive]}>
-              Project Pipeline ({projects.length})
+            <Text
+              style={[
+                styles.sidebarText,
+                activeMenu === 'projects' && styles.sidebarTextActive,
+              ]}
+            >
+              Projects
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.tabBtn, activeTab === 'clients' && styles.tabBtnActive]}
-            onPress={() => setActiveTab('clients')}
-            activeOpacity={0.8}
+            style={[styles.sidebarItem, activeMenu === 'payments' && styles.sidebarItemActive]}
+            onPress={() => setActiveMenu('payments')}
+          >
+            <Ionicons
+              name="card-outline"
+              size={18}
+              color={activeMenu === 'payments' ? '#000000' : '#9CA3AF'}
+            />
+            <Text
+              style={[
+                styles.sidebarText,
+                activeMenu === 'payments' && styles.sidebarTextActive,
+              ]}
+            >
+              Payments
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.sidebarItem, activeMenu === 'customers' && styles.sidebarItemActive]}
+            onPress={() => setActiveMenu('customers')}
           >
             <Ionicons
               name="people-outline"
-              size={16}
-              color={activeTab === 'clients' ? '#0A0A0E' : '#A1A1AA'}
+              size={18}
+              color={activeMenu === 'customers' ? '#000000' : '#9CA3AF'}
             />
-            <Text style={[styles.tabBtnText, activeTab === 'clients' && styles.tabBtnTextActive]}>
-              Client Directory
+            <Text
+              style={[
+                styles.sidebarText,
+                activeMenu === 'customers' && styles.sidebarTextActive,
+              ]}
+            >
+              Customers
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.tabBtn, activeTab === 'invoices' && styles.tabBtnActive]}
-            onPress={() => setActiveTab('invoices')}
-            activeOpacity={0.8}
+            style={[styles.sidebarItem, activeMenu === 'services' && styles.sidebarItemActive]}
+            onPress={() => setActiveMenu('services')}
           >
             <Ionicons
-              name="receipt-outline"
-              size={16}
-              color={activeTab === 'invoices' ? '#0A0A0E' : '#A1A1AA'}
+              name="sparkles-outline"
+              size={18}
+              color={activeMenu === 'services' ? '#000000' : '#9CA3AF'}
             />
-            <Text style={[styles.tabBtnText, activeTab === 'invoices' && styles.tabBtnTextActive]}>
-              Invoices & GST
+            <Text
+              style={[
+                styles.sidebarText,
+                activeMenu === 'services' && styles.sidebarTextActive,
+              ]}
+            >
+              Services
             </Text>
           </TouchableOpacity>
-        </View>
 
-        {/* ================= TAB 1: BOOKINGS DESK ================= */}
-        {activeTab === 'bookings' && (
-          <View style={styles.sectionContainer}>
-            <View style={styles.sectionHeaderRow}>
-              <View>
-                <Text style={styles.sectionTitle}>Studio Session Bookings</Text>
-                <Text style={styles.sectionSub}>Manage booth reservations, schedule approvals and client check-in</Text>
+          <TouchableOpacity
+            style={[styles.sidebarItem, activeMenu === 'availability' && styles.sidebarItemActive]}
+            onPress={() => setActiveMenu('availability')}
+          >
+            <Ionicons
+              name="calendar"
+              size={18}
+              color={activeMenu === 'availability' ? '#000000' : '#9CA3AF'}
+            />
+            <Text
+              style={[
+                styles.sidebarText,
+                activeMenu === 'availability' && styles.sidebarTextActive,
+              ]}
+            >
+              Availability
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.sidebarItem, activeMenu === 'content' && styles.sidebarItemActive]}
+            onPress={() => setActiveMenu('content')}
+          >
+            <Ionicons
+              name="phone-portrait-outline"
+              size={18}
+              color={activeMenu === 'content' ? '#000000' : '#9CA3AF'}
+            />
+            <Text
+              style={[
+                styles.sidebarText,
+                activeMenu === 'content' && styles.sidebarTextActive,
+              ]}
+            >
+              App Content
+            </Text>
+            <View style={styles.newBadge}>
+              <Text style={styles.newBadgeText}>New</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.sidebarItem, activeMenu === 'reports' && styles.sidebarItemActive]}
+            onPress={() => setActiveMenu('reports')}
+          >
+            <Ionicons
+              name="bar-chart-outline"
+              size={18}
+              color={activeMenu === 'reports' ? '#000000' : '#9CA3AF'}
+            />
+            <Text
+              style={[
+                styles.sidebarText,
+                activeMenu === 'reports' && styles.sidebarTextActive,
+              ]}
+            >
+              Reports
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.sidebarItem, activeMenu === 'settings' && styles.sidebarItemActive]}
+            onPress={() => setActiveMenu('settings')}
+          >
+            <Ionicons
+              name="settings-outline"
+              size={18}
+              color={activeMenu === 'settings' ? '#000000' : '#9CA3AF'}
+            />
+            <Text
+              style={[
+                styles.sidebarText,
+                activeMenu === 'settings' && styles.sidebarTextActive,
+              ]}
+            >
+              Settings
+            </Text>
+          </TouchableOpacity>
+
+          {/* Excel Export Button in Sidebar */}
+          <TouchableOpacity
+            style={styles.sidebarExportBtn}
+            onPress={handleExportUserLogins}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="download-outline" size={16} color="#EAB308" />
+            <Text style={styles.sidebarExportBtnText}>Export Logins (Excel)</Text>
+          </TouchableOpacity>
+        </ScrollView>
+
+        {/* ── MAIN WORKSPACE ── */}
+        <ScrollView style={styles.workspace} contentContainerStyle={styles.workspaceContent}>
+          {/* ── 4 STAT CARDS ── */}
+          <View style={styles.statsRow}>
+            <View style={styles.statCard}>
+              <View style={styles.statIconBoxGold}>
+                <Ionicons name="calendar-outline" size={20} color="#FACC15" />
               </View>
-
-              {/* Booking Filters */}
-              <View style={styles.filterGroup}>
-                <TouchableOpacity
-                  style={[styles.filterChip, bookingFilter === 'all' && styles.filterChipActive]}
-                  onPress={() => setBookingFilter('all')}
-                >
-                  <Text style={[styles.filterChipText, bookingFilter === 'all' && styles.filterChipTextActive]}>
-                    All ({bookings.length})
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.filterChip, bookingFilter === 'confirmed' && styles.filterChipActive]}
-                  onPress={() => setBookingFilter('confirmed')}
-                >
-                  <Text style={[styles.filterChipText, bookingFilter === 'confirmed' && styles.filterChipTextActive]}>
-                    Confirmed
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.filterChip, bookingFilter === 'pending' && styles.filterChipActive]}
-                  onPress={() => setBookingFilter('pending')}
-                >
-                  <Text style={[styles.filterChipText, bookingFilter === 'pending' && styles.filterChipTextActive]}>
-                    Pending ({bookings.filter((b) => b.status !== 'Confirmed').length})
-                  </Text>
-                </TouchableOpacity>
+              <View>
+                <Text style={styles.statLabel}>Today's Bookings</Text>
+                <Text style={styles.statValue}>6</Text>
               </View>
             </View>
 
-            {/* Bookings List Cards */}
-            {filteredBookings.map((b) => (
-              <GlowCard key={b.id} style={styles.bookingRowCard} borderColor="#2E2E3C">
-                <View style={styles.bookingCardHeader}>
-                  <View style={styles.bookingCodeCol}>
-                    <Text style={styles.bookingCode}>Pass: {b.referenceCode}</Text>
-                    <Text style={styles.bookingServiceName}>{b.serviceName}</Text>
-                    <Text style={styles.bookingStudioRoom}>{b.studioName} • {b.durationHours} Hours</Text>
-                  </View>
+            <View style={styles.statCard}>
+              <View style={styles.statIconBoxGold}>
+                <Ionicons name="pulse" size={20} color="#FACC15" />
+              </View>
+              <View>
+                <Text style={styles.statLabel}>Ongoing Projects</Text>
+                <Text style={styles.statValue}>4</Text>
+              </View>
+            </View>
 
-                  <View style={styles.bookingStatusCol}>
-                    <View style={styles.confirmedBadge}>
-                      <Ionicons name="checkmark-circle" size={12} color="#10B981" />
-                      <Text style={styles.confirmedBadgeText}>{b.status.toUpperCase()}</Text>
-                    </View>
-                    <Text style={styles.bookingPrice}>₹{b.totalPrice.toLocaleString()}</Text>
-                  </View>
-                </View>
+            <View style={styles.statCard}>
+              <View style={styles.statIconBoxGreen}>
+                <Ionicons name="checkmark-circle-outline" size={20} color="#10B981" />
+              </View>
+              <View>
+                <Text style={styles.statLabel}>Completed</Text>
+                <Text style={styles.statValue}>28</Text>
+              </View>
+            </View>
 
-                <View style={styles.bookingDivider} />
-
-                <View style={styles.bookingFooterRow}>
-                  <View style={styles.dateTimeRow}>
-                    <Ionicons name="calendar-outline" size={14} color={COLORS.primary} />
-                    <Text style={styles.dateTimeText}>{b.date} | {b.timeSlot}</Text>
-                  </View>
-
-                  <View style={styles.actionBtnRow}>
-                    <TouchableOpacity
-                      style={styles.actionBtnSecondary}
-                      onPress={() => handleCheckIn(b.referenceCode)}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={styles.actionBtnSecondaryText}>Check-in Client</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.actionBtnPrimary}
-                      onPress={() => handleApprove(b.referenceCode)}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={styles.actionBtnPrimaryText}>Approve Pass</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </GlowCard>
-            ))}
+            <View style={styles.statCard}>
+              <View style={styles.statIconBoxYellow}>
+                <Text style={styles.statRupeeSymbol}>₹</Text>
+              </View>
+              <View>
+                <Text style={styles.statLabel}>Revenue (This Month)</Text>
+                <Text style={styles.statValue}>₹1,24,500</Text>
+              </View>
+            </View>
           </View>
-        )}
 
-        {/* ================= TAB 2: PROJECTS PIPELINE ================= */}
-        {activeTab === 'projects' && (
-          <View style={styles.sectionContainer}>
-            <View style={styles.sectionHeaderRow}>
-              <View>
-                <Text style={styles.sectionTitle}>Post-Production Pipeline</Text>
-                <Text style={styles.sectionSub}>Review revisions, track timelines, and approve OTT deliveries</Text>
+          {/* ── 3-COLUMN DASHBOARD GRID ── */}
+          <View style={styles.dashboardGrid}>
+            {/* ── LEFT & CENTER: SCHEDULE, RECENT BOOKINGS, STATUS & ACTIONS ── */}
+            <View style={styles.dashboardLeftCol}>
+              {/* Row: Today's Schedule + Project Status */}
+              <View style={styles.scheduleStatusRow}>
+                {/* Today's Schedule Card */}
+                <View style={styles.scheduleCard}>
+                  <View style={styles.cardHeaderRow}>
+                    <Text style={styles.cardHeaderTitle}>Today's Schedule</Text>
+                    <TouchableOpacity onPress={() => setActiveMenu('bookings')}>
+                      <Text style={styles.cardHeaderLink}>View All</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.scheduleList}>
+                    <View style={styles.scheduleItem}>
+                      <Text style={styles.scheduleTime}>10:00 AM – 12:00 PM</Text>
+                      <Text style={styles.scheduleService}>Dubbing – Feature Film</Text>
+                      <Text style={styles.scheduleStudio}>Studio A</Text>
+                      <View style={[styles.statusTag, styles.statusTagGreen]}>
+                        <Text style={styles.statusTagGreenText}>In Progress</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.scheduleItem}>
+                      <Text style={styles.scheduleTime}>12:30 PM – 02:00 PM</Text>
+                      <Text style={styles.scheduleService}>Voice Over – Ad Film</Text>
+                      <Text style={styles.scheduleStudio}>Studio B</Text>
+                      <View style={[styles.statusTag, styles.statusTagBlue]}>
+                        <Text style={styles.statusTagBlueText}>Upcoming</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.scheduleItem}>
+                      <Text style={styles.scheduleTime}>03:00 PM – 05:00 PM</Text>
+                      <Text style={styles.scheduleService}>Dubbing – Web Series</Text>
+                      <Text style={styles.scheduleStudio}>Studio A</Text>
+                      <View style={[styles.statusTag, styles.statusTagBlue]}>
+                        <Text style={styles.statusTagBlueText}>Upcoming</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.scheduleItem}>
+                      <Text style={styles.scheduleTime}>05:30 PM – 07:00 PM</Text>
+                      <Text style={styles.scheduleService}>ADR – Short Film</Text>
+                      <Text style={styles.scheduleStudio}>Studio B</Text>
+                      <View style={[styles.statusTag, styles.statusTagCyan]}>
+                        <Text style={styles.statusTagCyanText}>Scheduled</Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Project Status Donut Mockup */}
+                <View style={styles.projectStatusCard}>
+                  <Text style={styles.cardHeaderTitle}>Project Status</Text>
+                  <View style={styles.donutContainer}>
+                    <View style={styles.donutCircle}>
+                      <Text style={styles.donutBigNumber}>32</Text>
+                      <Text style={styles.donutSub}>Projects</Text>
+                    </View>
+                    <View style={styles.donutLegend}>
+                      <View style={styles.legendRow}>
+                        <View style={[styles.legendDot, { backgroundColor: '#F59E0B' }]} />
+                        <Text style={styles.legendLabel}>In Progress</Text>
+                        <Text style={styles.legendCount}>12</Text>
+                      </View>
+                      <View style={styles.legendRow}>
+                        <View style={[styles.legendDot, { backgroundColor: '#06B6D4' }]} />
+                        <Text style={styles.legendLabel}>Under Review</Text>
+                        <Text style={styles.legendCount}>6</Text>
+                      </View>
+                      <View style={styles.legendRow}>
+                        <View style={[styles.legendDot, { backgroundColor: '#10B981' }]} />
+                        <Text style={styles.legendLabel}>Completed</Text>
+                        <Text style={styles.legendCount}>28</Text>
+                      </View>
+                      <View style={styles.legendRow}>
+                        <View style={[styles.legendDot, { backgroundColor: '#EF4444' }]} />
+                        <Text style={styles.legendLabel}>On Hold</Text>
+                        <Text style={styles.legendCount}>2</Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
               </View>
 
-              <View style={styles.filterGroup}>
-                <TouchableOpacity
-                  style={[styles.filterChip, projectFilter === 'all' && styles.filterChipActive]}
-                  onPress={() => setProjectFilter('all')}
-                >
-                  <Text style={[styles.filterChipText, projectFilter === 'all' && styles.filterChipTextActive]}>
-                    All ({projects.length})
-                  </Text>
-                </TouchableOpacity>
+              {/* Row: Recent Bookings Table + Quick Actions */}
+              <View style={styles.bookingsQuickRow}>
+                {/* Recent Bookings Table */}
+                <View style={styles.recentBookingsCard}>
+                  <View style={styles.cardHeaderRow}>
+                    <Text style={styles.cardHeaderTitle}>Recent Bookings</Text>
+                    <TouchableOpacity onPress={() => setActiveMenu('bookings')}>
+                      <Text style={styles.cardHeaderLink}>View All</Text>
+                    </TouchableOpacity>
+                  </View>
 
-                <TouchableOpacity
-                  style={[styles.filterChip, projectFilter === 'review' && styles.filterChipActive]}
-                  onPress={() => setProjectFilter('review')}
-                >
-                  <Text style={[styles.filterChipText, projectFilter === 'review' && styles.filterChipTextActive]}>
-                    Review ({projects.filter((p) => p.status === 'Review').length})
-                  </Text>
-                </TouchableOpacity>
+                  <View style={styles.tableHeader}>
+                    <Text style={[styles.th, { width: 60 }]}>#</Text>
+                    <Text style={[styles.th, { flex: 1.2 }]}>Customer</Text>
+                    <Text style={[styles.th, { flex: 1 }]}>Service</Text>
+                    <Text style={[styles.th, { flex: 1.3 }]}>Date & Time</Text>
+                    <Text style={[styles.th, { width: 75 }]}>Amount</Text>
+                    <Text style={[styles.th, { width: 85 }]}>Status</Text>
+                    <Text style={[styles.th, { width: 45, textAlign: 'center' }]}>Action</Text>
+                  </View>
 
-                <TouchableOpacity
-                  style={[styles.filterChip, projectFilter === 'progress' && styles.filterChipActive]}
-                  onPress={() => setProjectFilter('progress')}
-                >
-                  <Text style={[styles.filterChipText, projectFilter === 'progress' && styles.filterChipTextActive]}>
-                    In Progress
-                  </Text>
-                </TouchableOpacity>
+                  <View style={styles.tableBody}>
+                    <View style={styles.tableRow}>
+                      <Text style={[styles.td, { width: 60, color: '#9CA3AF' }]}>B-1042</Text>
+                      <Text style={[styles.td, { flex: 1.2, fontWeight: '700', color: '#FFFFFF' }]}>Arjun Movies</Text>
+                      <Text style={[styles.td, { flex: 1, color: '#D1D5DB' }]}>Dubbing</Text>
+                      <Text style={[styles.td, { flex: 1.3, color: '#9CA3AF', fontSize: 11 }]}>26 Jan, 10:00 AM</Text>
+                      <Text style={[styles.td, { width: 75, color: '#FACC15', fontWeight: '800' }]}>₹12,000</Text>
+                      <View style={{ width: 85 }}>
+                        <View style={[styles.statusTag, styles.statusTagGreen]}>
+                          <Text style={styles.statusTagGreenText}>Confirmed</Text>
+                        </View>
+                      </View>
+                      <TouchableOpacity style={{ width: 45, alignItems: 'center' }}>
+                        <Ionicons name="eye-outline" size={16} color="#9CA3AF" />
+                      </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.tableRow}>
+                      <Text style={[styles.td, { width: 60, color: '#9CA3AF' }]}>B-1041</Text>
+                      <Text style={[styles.td, { flex: 1.2, fontWeight: '700', color: '#FFFFFF' }]}>Vibe Studios</Text>
+                      <Text style={[styles.td, { flex: 1, color: '#D1D5DB' }]}>Voice Over</Text>
+                      <Text style={[styles.td, { flex: 1.3, color: '#9CA3AF', fontSize: 11 }]}>26 Jan, 12:30 PM</Text>
+                      <Text style={[styles.td, { width: 75, color: '#FACC15', fontWeight: '800' }]}>₹5,000</Text>
+                      <View style={{ width: 85 }}>
+                        <View style={[styles.statusTag, styles.statusTagYellow]}>
+                          <Text style={styles.statusTagYellowText}>Pending</Text>
+                        </View>
+                      </View>
+                      <TouchableOpacity style={{ width: 45, alignItems: 'center' }}>
+                        <Ionicons name="eye-outline" size={16} color="#9CA3AF" />
+                      </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.tableRow}>
+                      <Text style={[styles.td, { width: 60, color: '#9CA3AF' }]}>B-1040</Text>
+                      <Text style={[styles.td, { flex: 1.2, fontWeight: '700', color: '#FFFFFF' }]}>Pixel Films</Text>
+                      <Text style={[styles.td, { flex: 1, color: '#D1D5DB' }]}>ADR</Text>
+                      <Text style={[styles.td, { flex: 1.3, color: '#9CA3AF', fontSize: 11 }]}>26 Jan, 03:00 PM</Text>
+                      <Text style={[styles.td, { width: 75, color: '#FACC15', fontWeight: '800' }]}>₹8,000</Text>
+                      <View style={{ width: 85 }}>
+                        <View style={[styles.statusTag, styles.statusTagGreen]}>
+                          <Text style={styles.statusTagGreenText}>Confirmed</Text>
+                        </View>
+                      </View>
+                      <TouchableOpacity style={{ width: 45, alignItems: 'center' }}>
+                        <Ionicons name="eye-outline" size={16} color="#9CA3AF" />
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* Live Mobile Bookings from AppContext */}
+                    {bookings.slice(0, 2).map((b, idx) => (
+                      <View key={b.id || idx} style={styles.tableRow}>
+                        <Text style={[styles.td, { width: 60, color: '#9CA3AF' }]}>{b.referenceCode || b.id}</Text>
+                        <Text style={[styles.td, { flex: 1.2, fontWeight: '700', color: '#FFFFFF' }]}>
+                          Studio Client
+                        </Text>
+                        <Text style={[styles.td, { flex: 1, color: '#D1D5DB' }]}>{b.serviceName}</Text>
+                        <Text style={[styles.td, { flex: 1.3, color: '#9CA3AF', fontSize: 11 }]}>{b.date}</Text>
+                        <Text style={[styles.td, { width: 75, color: '#FACC15', fontWeight: '800' }]}>
+                          ₹{b.totalPrice?.toLocaleString('en-IN')}
+                        </Text>
+                        <View style={{ width: 85 }}>
+                          <View style={[styles.statusTag, styles.statusTagGreen]}>
+                            <Text style={styles.statusTagGreenText}>{b.status || 'Confirmed'}</Text>
+                          </View>
+                        </View>
+                        <TouchableOpacity style={{ width: 45, alignItems: 'center' }}>
+                          <Ionicons name="eye-outline" size={16} color="#9CA3AF" />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+
+                {/* Quick Actions */}
+                <View style={styles.quickActionsCard}>
+                  <Text style={styles.cardHeaderTitle}>Quick Actions</Text>
+                  <View style={styles.quickActionsList}>
+                    <TouchableOpacity
+                      style={styles.quickActionBtn}
+                      onPress={() => router.push('/booking/select')}
+                    >
+                      <Ionicons name="calendar-outline" size={16} color="#FACC15" />
+                      <Text style={styles.quickActionText}>New Booking</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.quickActionBtn}
+                      onPress={() => showNotice('Project upload manager ready.')}
+                    >
+                      <Ionicons name="cloud-upload-outline" size={16} color="#FACC15" />
+                      <Text style={styles.quickActionText}>Upload Project File</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.quickActionBtn}
+                      onPress={() => showNotice('Payment verified & studio receipt marked paid.')}
+                    >
+                      <Ionicons name="checkmark-circle-outline" size={16} color="#FACC15" />
+                      <Text style={styles.quickActionText}>Verify Payment</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.quickActionBtn}
+                      onPress={() => showNotice('Customer creation modal opened.')}
+                    >
+                      <Ionicons name="person-add-outline" size={16} color="#FACC15" />
+                      <Text style={styles.quickActionText}>Add Customer</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.quickActionBtn}
+                      onPress={() => showNotice('Studio services manager active.')}
+                    >
+                      <Ionicons name="settings-outline" size={16} color="#FACC15" />
+                      <Text style={styles.quickActionText}>Manage Services</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
               </View>
             </View>
 
-            {filteredProjects.map((proj) => (
-              <GlowCard key={proj.id} style={styles.bookingRowCard} borderColor="#2E2E3C">
-                <View style={styles.bookingCardHeader}>
-                  <View>
-                    <Text style={styles.bookingCode}>Project: {proj.code || proj.id}</Text>
-                    <Text style={styles.bookingServiceName}>{proj.title}</Text>
-                    <Text style={styles.bookingStudioRoom}>Category: {proj.serviceType || proj.category || 'Post Production'} • Editor: Arjun Soundworks</Text>
-                  </View>
+            {/* ── RIGHT COLUMN: APP BANNERS (HIGHLIGHTED IN GOLD) ── */}
+            <View style={styles.appBannersCard}>
+              <View style={styles.bannerCardHeader}>
+                <Ionicons name="phone-portrait-outline" size={16} color="#FACC15" />
+                <View style={{ flex: 1, marginLeft: 8 }}>
+                  <Text style={styles.bannerHeaderTitle}>App Banners</Text>
+                  <Text style={styles.bannerHeaderSubtitle}>Manage banners shown in the mobile app</Text>
+                </View>
+              </View>
 
-                  <View style={styles.bookingStatusCol}>
+              {/* Banner Carousel Preview with Navigation */}
+              <View style={styles.carouselPreviewBox}>
+                <Image
+                  source={require('../assets/images/hero_studio.jpg')}
+                  style={styles.carouselBg}
+                  resizeMode="cover"
+                />
+                <View style={styles.carouselOverlay}>
+                  <Text style={styles.carouselHeadline}>{activeBanner.title}</Text>
+                  <Text style={styles.carouselSubline}>{activeBanner.sub}</Text>
+                  <TouchableOpacity style={styles.carouselBookBtn}>
+                    <Text style={styles.carouselBookText}>Book Now →</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Left/Right Arrows */}
+                <TouchableOpacity
+                  style={styles.carouselArrowLeft}
+                  onPress={() =>
+                    setCurrentBannerIndex((prev) => (prev > 0 ? prev - 1 : bannerSlides.length - 1))
+                  }
+                >
+                  <Ionicons name="chevron-back" size={16} color="#FFFFFF" />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.carouselArrowRight}
+                  onPress={() =>
+                    setCurrentBannerIndex((prev) => (prev < bannerSlides.length - 1 ? prev + 1 : 0))
+                  }
+                >
+                  <Ionicons name="chevron-forward" size={16} color="#FFFFFF" />
+                </TouchableOpacity>
+
+                {/* Carousel Pagination Dots */}
+                <View style={styles.carouselDotsRow}>
+                  {bannerSlides.map((_, idx) => (
                     <View
+                      key={idx}
                       style={[
-                        styles.confirmedBadge,
-                        proj.status === 'Review' && { backgroundColor: 'rgba(234, 179, 8, 0.15)', borderColor: COLORS.primary },
-                        proj.status === 'In Progress' && { backgroundColor: 'rgba(56, 189, 248, 0.15)', borderColor: '#38BDF8' },
+                        styles.carouselDot,
+                        idx === currentBannerIndex && styles.carouselDotActive,
                       ]}
-                    >
+                    />
+                  ))}
+                </View>
+              </View>
+
+              {/* Banner Toggle List */}
+              <View style={styles.bannerToggleList}>
+                {bannerSlides.map((b) => (
+                  <View key={b.id} style={styles.bannerToggleItem}>
+                    <View style={styles.bannerThumbPreview}>
+                      <Ionicons
+                        name={b.id === 'dubbing' ? 'mic' : b.id === 'vo' ? 'musical-notes' : 'pulse'}
+                        size={14}
+                        color="#FACC15"
+                      />
+                    </View>
+                    <View style={{ flex: 1, marginHorizontal: 8 }}>
+                      <Text style={styles.bannerItemTitle}>{b.title}</Text>
                       <Text
                         style={[
-                          styles.confirmedBadgeText,
-                          proj.status === 'Review' && { color: COLORS.primary },
-                          proj.status === 'In Progress' && { color: '#38BDF8' },
+                          styles.bannerItemStatus,
+                          { color: b.published ? '#10B981' : '#6B7280' },
                         ]}
                       >
-                        {proj.status.toUpperCase()}
+                        {b.published ? 'Published' : 'Draft'}
                       </Text>
                     </View>
-                    <Text style={styles.bookingPrice}>{proj.progressPercent}% Done</Text>
+                    <Switch
+                      value={b.published}
+                      onValueChange={() => handleToggleBanner(b.id)}
+                      trackColor={{ false: '#374151', true: '#FACC15' }}
+                      thumbColor="#FFFFFF"
+                    />
                   </View>
-                </View>
+                ))}
+              </View>
 
-                {/* Progress bar */}
-                <View style={styles.pipelineBarBg}>
-                  <View style={[styles.pipelineBarFill, { width: `${proj.progressPercent}%` }]} />
-                </View>
+              {/* Upload & Publish Buttons */}
+              <TouchableOpacity
+                style={styles.uploadBannerBtn}
+                onPress={() => showNotice('Banner image selector opened.')}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="cloud-upload-outline" size={16} color="#000000" />
+                <Text style={styles.uploadBannerBtnText}>Upload / Change Banner</Text>
+              </TouchableOpacity>
 
-                <View style={styles.bookingFooterRow}>
-                  <Text style={styles.dateTimeText}>
-                    Files: {proj.files ? proj.files.length : 2} Assets • Due: Nov 28, 2026
+              <TouchableOpacity
+                style={styles.publishAppBtn}
+                onPress={handlePublishBannersToApp}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="paper-plane-outline" size={16} color="#EAB308" />
+                <Text style={styles.publishAppBtnText}>Publish to App Now</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* ── CUSTOMER & USER LOGIN DETAILS SECTION (WITH EXCEL EXPORT) ── */}
+          <View style={styles.usersSectionCard}>
+            <View style={styles.cardHeaderRow}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Ionicons name="people" size={18} color="#FACC15" />
+                <Text style={styles.cardHeaderTitle}>Customer Accounts & User Login History</Text>
+              </View>
+
+              <TouchableOpacity
+                style={styles.exportExcelBtn}
+                onPress={handleExportUserLogins}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="document-text-outline" size={16} color="#000000" />
+                <Text style={styles.exportExcelBtnText}>Export Excel (.csv)</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.sectionSubtitle}>
+              Registered user credentials, login timestamps, device OS, and client location for administrative audit.
+            </Text>
+
+            <View style={styles.usersTable}>
+              <View style={styles.usersTableHeader}>
+                <Text style={[styles.th, { width: 70 }]}>User ID</Text>
+                <Text style={[styles.th, { flex: 1.2 }]}>Customer</Text>
+                <Text style={[styles.th, { flex: 1.5 }]}>Email ID</Text>
+                <Text style={[styles.th, { flex: 1.2 }]}>Password / Key</Text>
+                <Text style={[styles.th, { flex: 1.3 }]}>Login Device</Text>
+                <Text style={[styles.th, { flex: 1.6 }]}>Location (Where it's Login)</Text>
+                <Text style={[styles.th, { flex: 1.2 }]}>Last Login</Text>
+                <Text style={[styles.th, { width: 70 }]}>Bookings</Text>
+              </View>
+
+              {userLogins.map((user) => (
+                <View key={user.id} style={styles.usersTableRow}>
+                  <Text style={[styles.td, { width: 70, color: '#FACC15', fontWeight: '800' }]}>{user.id}</Text>
+                  <Text style={[styles.td, { flex: 1.2, fontWeight: '700', color: '#FFFFFF' }]}>{user.name}</Text>
+                  <Text style={[styles.td, { flex: 1.5, color: '#93C5FD' }]}>{user.email}</Text>
+                  <Text style={[styles.td, { flex: 1.2, color: '#EAB308', fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' }]}>
+                    {user.passwordDisplay}
                   </Text>
-
-                  <View style={styles.actionBtnRow}>
-                    <TouchableOpacity
-                      style={styles.actionBtnSecondary}
-                      onPress={() => showNotice(`Revision notes for ${proj.title} loaded.`)}
-                    >
-                      <Text style={styles.actionBtnSecondaryText}>View Notes</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.actionBtnPrimary}
-                      onPress={() => {
-                        updateProjectProgress(proj.id, 100);
-                        showNotice(`Project ${proj.title} marked 100% Mastered & Delivered.`);
-                      }}
-                    >
-                      <Text style={styles.actionBtnPrimaryText}>Mark Mastered</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </GlowCard>
-            ))}
-          </View>
-        )}
-
-        {/* ================= TAB 3: CLIENT DIRECTORY ================= */}
-        {activeTab === 'clients' && (
-          <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Registered Studio Clients</Text>
-            <Text style={styles.sectionSub}>Film production houses, ad agencies, and voice talents</Text>
-
-            <View style={styles.clientTableCard}>
-              {[
-                { name: 'Devon Vance', company: 'Vance Audio Visual Works', phone: '+91 98765 43210', role: 'Creative Producer', sessions: 8 },
-                { name: 'Rajesh Nair', company: 'CinemaScope Motion Pictures', phone: '+91 98111 22334', role: 'Film Director', sessions: 14 },
-                { name: 'Ananya Roy', company: 'Ogilvy Commercials', phone: '+91 98222 33445', role: 'Senior Audio Lead', sessions: 5 },
-                { name: 'Karthik Rao', company: 'Indie Sound Records', phone: '+91 98333 44556', role: 'Music Producer', sessions: 11 },
-              ].map((client, idx) => (
-                <View key={idx} style={[styles.clientTableRow, idx > 0 && styles.clientTableBorder]}>
-                  <View style={styles.clientAvatarBox}>
-                    <Text style={styles.clientAvatarText}>{client.name.substring(0, 2).toUpperCase()}</Text>
-                  </View>
-                  <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text style={styles.clientName}>{client.name}</Text>
-                    <Text style={styles.clientCompany}>{client.company} • {client.role}</Text>
-                    <Text style={styles.clientPhone}>{client.phone}</Text>
-                  </View>
-                  <View style={styles.clientSessionCol}>
-                    <Text style={styles.clientSessionCount}>{client.sessions} Sessions</Text>
-                    <TouchableOpacity
-                      style={styles.clientContactBtn}
-                      onPress={() => showNotice(`Initiating call with ${client.name} (${client.phone})...`)}
-                    >
-                      <Ionicons name="call" size={13} color={COLORS.primary} />
-                      <Text style={styles.clientContactText}>Contact</Text>
-                    </TouchableOpacity>
-                  </View>
+                  <Text style={[styles.td, { flex: 1.3, color: '#9CA3AF', fontSize: 11 }]}>{user.device}</Text>
+                  <Text style={[styles.td, { flex: 1.6, color: '#D1D5DB', fontSize: 11 }]}>{user.loginLocation}</Text>
+                  <Text style={[styles.td, { flex: 1.2, color: '#9CA3AF', fontSize: 11 }]}>{user.lastLogin}</Text>
+                  <Text style={[styles.td, { width: 70, color: '#10B981', fontWeight: '800' }]}>{user.totalBookings}</Text>
                 </View>
               ))}
             </View>
           </View>
-        )}
+        </ScrollView>
+      </View>
 
-        {/* ================= TAB 4: INVOICES & GST ================= */}
-        {activeTab === 'invoices' && (
-          <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Invoices & Studio Receipts</Text>
-            <Text style={styles.sectionSub}>GST-compliant invoices, advance receipts, and mode breakdown</Text>
+      {/* ── EXCEL CSV PREVIEW MODAL (FOR MOBILE / DOWNLOAD FALLBACK) ── */}
+      <Modal visible={showExportModal} transparent={true} animationType="slide">
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Ionicons name="document-text" size={20} color="#FACC15" />
+                <Text style={styles.modalTitle}>User Logins Excel Data Export</Text>
+              </View>
+              <TouchableOpacity onPress={() => setShowExportModal(false)}>
+                <Ionicons name="close" size={22} color="#9CA3AF" />
+              </TouchableOpacity>
+            </View>
 
-            <View style={styles.clientTableCard}>
-              {[
-                { inv: 'INV-2026-081', client: 'Devon Vance', date: '20 Nov 2026', total: '₹4,720', gst: '₹720', advance: '₹2,360', status: 'Partially Paid (50%)', mode: 'UPI' },
-                { inv: 'INV-2026-079', client: 'Rajesh Nair', date: '18 Nov 2026', total: '₹14,160', gst: '₹2,160', advance: '₹14,160', status: 'Fully Paid', mode: 'VISA' },
-                { inv: 'INV-2026-075', client: 'Ananya Roy', date: '15 Nov 2026', total: '₹8,260', gst: '₹1,260', advance: '₹8,260', status: 'Fully Paid', mode: 'Razorpay' },
-              ].map((inv, idx) => (
-                <View key={idx} style={[styles.clientTableRow, idx > 0 && styles.clientTableBorder]}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.clientName}>{inv.inv} • {inv.client}</Text>
-                    <Text style={styles.clientCompany}>Date: {inv.date} • Mode: {inv.mode}</Text>
-                    <Text style={styles.clientPhone}>GST (18%): {inv.gst} | Adv: {inv.advance}</Text>
-                  </View>
-                  <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={styles.bookingPrice}>{inv.total}</Text>
-                    <Text style={[styles.confirmedBadgeText, { color: COLORS.primary, marginTop: 4 }]}>{inv.status}</Text>
-                    <TouchableOpacity
-                      style={[styles.actionBtnSecondary, { marginTop: 6, paddingVertical: 4, paddingHorizontal: 8 }]}
-                      onPress={() => showNotice(`Invoice PDF ${inv.inv} downloaded.`)}
-                    >
-                      <Text style={styles.actionBtnSecondaryText}>Download PDF</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              ))}
+            <Text style={styles.modalSub}>
+              Copy or save this Excel-compatible CSV data containing user email IDs, passwords, and login locations:
+            </Text>
+
+            <ScrollView style={styles.csvTextBox}>
+              <Text style={styles.csvText}>{exportedCsvString}</Text>
+            </ScrollView>
+
+            <View style={styles.modalBtnRow}>
+              <TouchableOpacity
+                style={styles.modalCloseBtn}
+                onPress={() => setShowExportModal(false)}
+              >
+                <Text style={styles.modalCloseBtnText}>Done</Text>
+              </TouchableOpacity>
             </View>
           </View>
-        )}
-      </ScrollView>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -495,483 +978,852 @@ export default function WebAdminPortalScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A0A0E',
+    backgroundColor: '#0A0A0F',
+    width: '100%',
+    height: '100%',
   },
-  webNavbar: {
+
+  // ── Top Header ──
+  topHeader: {
+    height: 64,
+    backgroundColor: '#12121A',
+    borderBottomWidth: 1,
+    borderBottomColor: '#1F1F2E',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    backgroundColor: '#111116',
-    borderBottomWidth: 1,
-    borderBottomColor: '#23232E',
+    paddingHorizontal: 16,
+    zIndex: 10,
   },
-  navBrandCol: {
+  headerLeftCol: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#1F1F2E',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  backBtnText: {
+    color: '#EAB308',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  headerBrandBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  soundwaveLogo: {
+    width: 28,
+    height: 28,
+  },
+  headerBrandTitle: {
+    color: '#FACC15',
+    fontSize: 13,
+    fontWeight: '900',
+    letterSpacing: 0.8,
+  },
+  headerBrandSubtitle: {
+    color: '#9CA3AF',
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  headerCenterCol: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    flex: 1,
+    maxWidth: 580,
+    marginHorizontal: 16,
+  },
+  adminTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  adminTitleText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  studioPill: {
+    backgroundColor: '#EAB308',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  studioPillText: {
+    color: '#000000',
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  searchBox: {
+    flex: 1,
+    height: 38,
+    backgroundColor: '#1A1A24',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#2D2D3F',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    gap: 8,
+  },
+  searchInput: {
+    flex: 1,
+    color: '#FFFFFF',
+    fontSize: 12,
+  },
+  headerRightCol: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
   },
-  backToAppBtn: {
-    flexDirection: 'row',
+  notifBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#1A1A24',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(234, 179, 8, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(234, 179, 8, 0.3)',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
+    justifyContent: 'center',
+    position: 'relative',
   },
-  backToAppText: {
-    color: COLORS.primary,
-    fontSize: 11,
-    fontWeight: '800',
-  },
-  brandDivider: {
-    width: 1,
-    height: 28,
-    backgroundColor: '#2A2A38',
-  },
-  webPortalTitle: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-  },
-  webPortalSub: {
-    color: '#A1A1AA',
-    fontSize: 10.5,
-  },
-  navStatusCol: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    flexWrap: 'wrap',
-  },
-  hotlinePillGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  hotlinePillPrimary: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: COLORS.primary,
-    paddingVertical: 5,
-    paddingHorizontal: 9,
-    borderRadius: 14,
-  },
-  hotlineTextPrimary: {
-    color: '#0A0A0E',
-    fontSize: 10.5,
-    fontWeight: '900',
-    letterSpacing: 0.3,
-  },
-  primaryBadgeSmall: {
-    backgroundColor: '#0A0A0E',
-    paddingHorizontal: 3.5,
-    paddingVertical: 0.5,
-    borderRadius: 3,
-  },
-  primaryBadgeSmallText: {
-    color: COLORS.primary,
-    fontSize: 7,
-    fontWeight: '900',
-  },
-  hotlinePillSecondary: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(234, 179, 8, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(234, 179, 8, 0.35)',
-    paddingVertical: 5,
-    paddingHorizontal: 9,
-    borderRadius: 14,
-  },
-  hotlineTextSecondary: {
-    color: '#FFFFFF',
-    fontSize: 10.5,
-    fontWeight: '800',
-  },
-  statusLivePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#16161D',
-    borderWidth: 1,
-    borderColor: '#2E2E3C',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 20,
-  },
-  livePulseDot: {
+  redBadgeDot: {
+    position: 'absolute',
+    top: 7,
+    right: 8,
     width: 7,
     height: 7,
     borderRadius: 3.5,
-    backgroundColor: '#10B981',
+    backgroundColor: '#EF4444',
   },
-  statusLiveText: {
-    color: '#E4E4E7',
-    fontSize: 9.5,
-    fontWeight: '800',
-  },
-  adminUserPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(234, 179, 8, 0.14)',
-    borderWidth: 1,
-    borderColor: 'rgba(234, 179, 8, 0.4)',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 20,
-  },
-  adminUserName: {
-    color: COLORS.primaryLight,
-    fontSize: 11,
-    fontWeight: '800',
-  },
-  toastNotice: {
+  adminProfileBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#1E1C12',
+    backgroundColor: '#1A1A24',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: COLORS.primary,
-    marginHorizontal: 16,
-    marginTop: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 8,
+    borderColor: '#2D2D3F',
   },
-  toastText: {
+  adminAvatar: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#FACC15',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  adminAvatarText: {
+    color: '#000000',
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  adminName: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  adminRole: {
+    color: '#9CA3AF',
+    fontSize: 9,
+    fontWeight: '600',
+  },
+
+  noticeToast: {
+    backgroundColor: '#064E3B',
+    borderColor: '#059669',
+    borderWidth: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    justifyContent: 'center',
+  },
+  noticeText: {
+    color: '#A7F3D0',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  // ── Main Layout ──
+  mainLayout: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+
+  // ── Sidebar ──
+  sidebar: {
+    width: 200,
+    backgroundColor: '#0E0E16',
+    borderRightWidth: 1,
+    borderRightColor: '#1A1A26',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+  },
+  sidebarItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginBottom: 4,
+  },
+  sidebarItemActive: {
+    backgroundColor: '#FACC15',
+  },
+  sidebarText: {
+    color: '#9CA3AF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  sidebarTextActive: {
+    color: '#000000',
+    fontWeight: '900',
+  },
+  newBadge: {
+    backgroundColor: '#EF4444',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 6,
+    marginLeft: 'auto',
+  },
+  newBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '900',
+  },
+  sidebarExportBtn: {
+    marginTop: 20,
+    backgroundColor: 'rgba(234, 179, 8, 0.12)',
+    borderWidth: 1,
+    borderColor: '#EAB308',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    justifyContent: 'center',
+  },
+  sidebarExportBtnText: {
+    color: '#FACC15',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+
+  // ── Workspace ──
+  workspace: {
+    flex: 1,
+    backgroundColor: '#0A0A0F',
+  },
+  workspaceContent: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+
+  // ── Stat Cards ──
+  statsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+    flexWrap: 'wrap',
+  },
+  statCard: {
+    flex: 1,
+    minWidth: 160,
+    backgroundColor: '#12121A',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#1F1F2E',
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  statIconBoxGold: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: 'rgba(250, 204, 21, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statIconBoxGreen: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statIconBoxYellow: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: 'rgba(245, 158, 11, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statRupeeSymbol: {
+    color: '#F59E0B',
+    fontSize: 20,
+    fontWeight: '900',
+  },
+  statLabel: {
+    color: '#9CA3AF',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  statValue: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '900',
+    marginTop: 2,
+  },
+
+  // ── Dashboard Grid ──
+  dashboardGrid: {
+    flexDirection: 'row',
+    gap: 16,
+    flexWrap: 'wrap',
+  },
+  dashboardLeftCol: {
+    flex: 2,
+    minWidth: 420,
+    gap: 16,
+  },
+  scheduleStatusRow: {
+    flexDirection: 'row',
+    gap: 16,
+    flexWrap: 'wrap',
+  },
+  scheduleCard: {
+    flex: 1.4,
+    minWidth: 260,
+    backgroundColor: '#12121A',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#1F1F2E',
+    padding: 14,
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  cardHeaderTitle: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  cardHeaderLink: {
+    color: '#EAB308',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  scheduleList: {
+    gap: 8,
+  },
+  scheduleItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#181824',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    gap: 8,
+  },
+  scheduleTime: {
+    color: '#9CA3AF',
+    fontSize: 11,
+    fontWeight: '600',
+    width: 110,
+  },
+  scheduleService: {
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '700',
     flex: 1,
   },
-  scrollContent: {
-    padding: 18,
+  scheduleStudio: {
+    color: '#6B7280',
+    fontSize: 11,
+    width: 55,
   },
-  kpiRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 18,
+  statusTag: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  kpiCard: {
+  statusTagGreen: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+  },
+  statusTagGreenText: {
+    color: '#10B981',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  statusTagBlue: {
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+  },
+  statusTagBlueText: {
+    color: '#60A5FA',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  statusTagCyan: {
+    backgroundColor: 'rgba(6, 182, 212, 0.15)',
+  },
+  statusTagCyanText: {
+    color: '#22D3EE',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  statusTagYellow: {
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+  },
+  statusTagYellowText: {
+    color: '#F59E0B',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+
+  // Project Status
+  projectStatusCard: {
     flex: 1,
-    minWidth: 180,
+    minWidth: 200,
+    backgroundColor: '#12121A',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#1F1F2E',
     padding: 14,
-    backgroundColor: '#131319',
-    borderRadius: 14,
   },
-  kpiHeader: {
+  donutContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginTop: 8,
+  },
+  donutCircle: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    borderWidth: 6,
+    borderColor: '#10B981',
+    borderTopColor: '#F59E0B',
+    borderRightColor: '#06B6D4',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#181824',
+  },
+  donutBigNumber: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  donutSub: {
+    color: '#9CA3AF',
+    fontSize: 8,
+    fontWeight: '700',
+  },
+  donutLegend: {
+    flex: 1,
+    gap: 4,
+  },
+  legendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  legendDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  legendLabel: {
+    color: '#9CA3AF',
+    fontSize: 11,
+    flex: 1,
+  },
+  legendCount: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+
+  // Bookings & Quick Actions Row
+  bookingsQuickRow: {
+    flexDirection: 'row',
+    gap: 16,
+    flexWrap: 'wrap',
+  },
+  recentBookingsCard: {
+    flex: 2,
+    minWidth: 280,
+    backgroundColor: '#12121A',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#1F1F2E',
+    padding: 14,
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#1F1F2E',
+    paddingBottom: 8,
+    marginBottom: 6,
+  },
+  th: {
+    color: '#6B7280',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  tableBody: {
+    gap: 4,
+  },
+  tableRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 7,
+    borderBottomWidth: 1,
+    borderBottomColor: '#161622',
+  },
+  td: {
+    fontSize: 12,
+  },
+
+  quickActionsCard: {
+    flex: 1,
+    minWidth: 160,
+    backgroundColor: '#12121A',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#1F1F2E',
+    padding: 14,
+  },
+  quickActionsList: {
+    gap: 8,
+    marginTop: 4,
+  },
+  quickActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#181824',
+    paddingVertical: 9,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#262638',
+  },
+  quickActionText: {
+    color: '#D1D5DB',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  // ── RIGHT COLUMN: APP BANNERS (HIGHLIGHTED CARD) ──
+  appBannersCard: {
+    flex: 1,
+    minWidth: 280,
+    maxWidth: 360,
+    backgroundColor: '#12121A',
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: '#FACC15', // Highlighted yellow frame matching mockup
+    padding: 14,
+    shadowColor: '#FACC15',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  bannerCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  bannerHeaderTitle: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '900',
+  },
+  bannerHeaderSubtitle: {
+    color: '#9CA3AF',
+    fontSize: 10,
+    marginTop: 1,
+  },
+  carouselPreviewBox: {
+    width: '100%',
+    height: 140,
+    borderRadius: 10,
+    overflow: 'hidden',
+    position: 'relative',
+    marginBottom: 12,
+  },
+  carouselBg: {
+    width: '100%',
+    height: '100%',
+  },
+  carouselOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(10, 10, 15, 0.75)',
+    padding: 12,
+    justifyContent: 'center',
+  },
+  carouselHeadline: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  carouselSubline: {
+    color: '#D1D5DB',
+    fontSize: 10,
+    marginVertical: 4,
+  },
+  carouselBookBtn: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#FACC15',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginTop: 4,
+  },
+  carouselBookText: {
+    color: '#000000',
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  carouselArrowLeft: {
+    position: 'absolute',
+    left: 6,
+    top: '40%',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  carouselArrowRight: {
+    position: 'absolute',
+    right: 6,
+    top: '40%',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  carouselDotsRow: {
+    position: 'absolute',
+    bottom: 6,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    gap: 4,
+  },
+  carouselDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: '#4B5563',
+  },
+  carouselDotActive: {
+    backgroundColor: '#FACC15',
+    width: 14,
+  },
+  bannerToggleList: {
+    gap: 8,
+    marginBottom: 12,
+  },
+  bannerToggleItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#181824',
+    padding: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#242436',
+  },
+  bannerThumbPreview: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    backgroundColor: '#262638',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bannerItemTitle: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  bannerItemStatus: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  uploadBannerBtn: {
+    backgroundColor: '#FACC15',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  uploadBannerBtnText: {
+    color: '#000000',
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  publishAppBtn: {
+    backgroundColor: '#181824',
+    borderWidth: 1,
+    borderColor: '#EAB308',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 9,
+    borderRadius: 8,
+  },
+  publishAppBtnText: {
+    color: '#FACC15',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+
+  // ── Customer & User Logins Section ──
+  usersSectionCard: {
+    marginTop: 20,
+    backgroundColor: '#12121A',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#1F1F2E',
+    padding: 16,
+  },
+  sectionSubtitle: {
+    color: '#9CA3AF',
+    fontSize: 11,
+    marginTop: -4,
+    marginBottom: 12,
+  },
+  exportExcelBtn: {
+    backgroundColor: '#FACC15',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  exportExcelBtnText: {
+    color: '#000000',
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  usersTable: {
+    borderWidth: 1,
+    borderColor: '#1F1F2E',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  usersTableHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#181824',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#262638',
+  },
+  usersTableRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#161622',
+  },
+
+  // ── Modal ──
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 620,
+    backgroundColor: '#12121A',
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#FACC15',
+    padding: 18,
+    maxHeight: '80%',
+  },
+  modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
   },
-  kpiIconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  kpiBadge: {
-    color: COLORS.primary,
-    fontSize: 9.5,
-    fontWeight: '800',
-    borderWidth: 1,
-    borderColor: 'rgba(234, 179, 8, 0.4)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  kpiValue: {
+  modalTitle: {
     color: '#FFFFFF',
-    fontSize: 22,
+    fontSize: 16,
     fontWeight: '900',
-    marginTop: 2,
   },
-  kpiLabel: {
-    color: '#FFFFFF',
+  modalSub: {
+    color: '#9CA3AF',
     fontSize: 12,
-    fontWeight: '700',
-    marginTop: 2,
-  },
-  kpiSub: {
-    color: '#71717A',
-    fontSize: 10,
-    marginTop: 3,
-  },
-  tabBar: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    backgroundColor: '#111116',
-    padding: 6,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#23232E',
-    marginBottom: 16,
-  },
-  tabBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 8,
-  },
-  tabBtnActive: {
-    backgroundColor: COLORS.primary,
-  },
-  tabBtnText: {
-    color: '#A1A1AA',
-    fontSize: 11.5,
-    fontWeight: '700',
-  },
-  tabBtnTextActive: {
-    color: '#0A0A0E',
-    fontWeight: '900',
-  },
-  sectionContainer: {
-    marginTop: 4,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 14,
-    gap: 10,
-  },
-  sectionTitle: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '900',
-  },
-  sectionSub: {
-    color: '#A1A1AA',
-    fontSize: 11,
-    marginTop: 2,
-  },
-  filterGroup: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  filterChip: {
-    backgroundColor: '#16161D',
-    borderWidth: 1,
-    borderColor: '#23232E',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 6,
-  },
-  filterChipActive: {
-    backgroundColor: 'rgba(234, 179, 8, 0.15)',
-    borderColor: COLORS.primary,
-  },
-  filterChipText: {
-    color: '#A1A1AA',
-    fontSize: 10.5,
-    fontWeight: '700',
-  },
-  filterChipTextActive: {
-    color: COLORS.primary,
-    fontWeight: '800',
-  },
-  bookingRowCard: {
-    padding: 14,
-    backgroundColor: '#131319',
-    borderRadius: 14,
     marginBottom: 12,
   },
-  bookingCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  bookingCodeCol: {
-    flex: 1,
-  },
-  bookingCode: {
-    color: COLORS.primary,
-    fontSize: 11,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-  },
-  bookingServiceName: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '800',
-    marginTop: 2,
-  },
-  bookingStudioRoom: {
-    color: '#A1A1AA',
-    fontSize: 11,
-    marginTop: 1,
-  },
-  bookingStatusCol: {
-    alignItems: 'flex-end',
-  },
-  confirmedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
-    borderWidth: 1,
-    borderColor: '#10B981',
-    paddingVertical: 3,
-    paddingHorizontal: 7,
-    borderRadius: 4,
-  },
-  confirmedBadgeText: {
-    color: '#10B981',
-    fontSize: 9.5,
-    fontWeight: '900',
-  },
-  bookingPrice: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '900',
-    marginTop: 4,
-  },
-  bookingDivider: {
-    height: 1,
-    backgroundColor: '#20202A',
-    marginVertical: 10,
-  },
-  bookingFooterRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  dateTimeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  dateTimeText: {
-    color: '#E4E4E7',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  actionBtnRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  actionBtnSecondary: {
-    backgroundColor: '#23232E',
-    borderWidth: 1,
-    borderColor: '#30303E',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 6,
-  },
-  actionBtnSecondaryText: {
-    color: '#E4E4E7',
-    fontSize: 10.5,
-    fontWeight: '700',
-  },
-  actionBtnPrimary: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-  },
-  actionBtnPrimaryText: {
-    color: '#0A0A0E',
-    fontSize: 10.5,
-    fontWeight: '900',
-  },
-  pipelineBarBg: {
-    height: 5,
-    backgroundColor: '#20202A',
-    borderRadius: 2.5,
-    marginVertical: 10,
-    overflow: 'hidden',
-  },
-  pipelineBarFill: {
-    height: '100%',
-    backgroundColor: COLORS.primary,
-    borderRadius: 2.5,
-  },
-  clientTableCard: {
-    backgroundColor: '#131319',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#23232E',
+  csvTextBox: {
+    backgroundColor: '#09090D',
+    borderRadius: 8,
     padding: 12,
-  },
-  clientTableRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-  },
-  clientTableBorder: {
-    borderTopWidth: 1,
-    borderTopColor: '#20202A',
-  },
-  clientAvatarBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(234, 179, 8, 0.14)',
+    maxHeight: 280,
     borderWidth: 1,
-    borderColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: '#262638',
   },
-  clientAvatarText: {
-    color: COLORS.primary,
-    fontSize: 12,
-    fontWeight: '900',
-  },
-  clientName: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  clientCompany: {
-    color: '#A1A1AA',
-    fontSize: 10.5,
-    marginTop: 2,
-  },
-  clientPhone: {
-    color: '#71717A',
-    fontSize: 10,
-    marginTop: 1,
-  },
-  clientSessionCol: {
-    alignItems: 'flex-end',
-    gap: 4,
-  },
-  clientSessionCount: {
-    color: COLORS.primary,
+  csvText: {
+    color: '#A7F3D0',
     fontSize: 11,
-    fontWeight: '800',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
-  clientContactBtn: {
+  modalBtnRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(234, 179, 8, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(234, 179, 8, 0.3)',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 4,
+    justifyContent: 'flex-end',
+    marginTop: 14,
   },
-  clientContactText: {
-    color: COLORS.primary,
-    fontSize: 10,
-    fontWeight: '800',
+  modalCloseBtn: {
+    backgroundColor: '#FACC15',
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  modalCloseBtnText: {
+    color: '#000000',
+    fontSize: 13,
+    fontWeight: '900',
   },
 });

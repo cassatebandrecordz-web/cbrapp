@@ -168,6 +168,27 @@ export default function ProfileScreen() {
             )}
           </GlowCard>
 
+          {/* ── Quick Switch / Sign In Account Card ── */}
+          <TouchableOpacity
+            style={styles.switchAccountCard}
+            onPress={() => {
+              soundEffects.playClick(850, 0.03);
+              router.push('/login');
+            }}
+            activeOpacity={0.8}
+          >
+            <View style={styles.switchAccountLeft}>
+              <View style={styles.switchAccountIconBox}>
+                <Ionicons name="log-in-outline" size={18} color="#000000" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.switchAccountTitle}>Studio Login / Switch Account</Text>
+                <Text style={styles.switchAccountSub}>Sign in with Email or Phone to sync bookings</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={17} color="#CA8A04" />
+          </TouchableOpacity>
+
           {/* ── Client Navigation Menu ── */}
           <View style={styles.menuContainer}>
             <TouchableOpacity
@@ -491,6 +512,50 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     fontWeight: '900',
     letterSpacing: 0.3,
+  },
+  // ── Switch Account Card ──
+  switchAccountCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#EAB308',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 14,
+    shadowColor: '#EAB308',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  switchAccountLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+    marginRight: 8,
+  },
+  switchAccountIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FACC15',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  switchAccountTitle: {
+    color: '#111827',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  switchAccountSub: {
+    color: '#6B7280',
+    fontSize: 10.5,
+    fontWeight: '500',
+    marginTop: 1,
   },
   // ── Client Navigation Menu ──
   menuContainer: {

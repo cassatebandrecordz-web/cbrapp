@@ -309,14 +309,25 @@ export default function HomeScreen() {
           />
         </View>
 
-        <TouchableOpacity
-          style={styles.headerIconBtn}
-          onPress={() => router.push('/notifications')}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="notifications-outline" size={18} color="#111827" />
-          <View style={styles.notifBadgeDot} />
-        </TouchableOpacity>
+        <View style={styles.headerRightActions}>
+          <TouchableOpacity
+            style={styles.headerIconBtn}
+            onPress={() => router.push('/login')}
+            activeOpacity={0.7}
+            accessibilityLabel="Studio Login or Account Switch"
+          >
+            <Ionicons name="person-circle-outline" size={20} color="#111827" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.headerIconBtn}
+            onPress={() => router.push('/notifications')}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="notifications-outline" size={18} color="#111827" />
+            <View style={styles.notifBadgeDot} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -601,6 +612,11 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  headerRightActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   headerLogoImg: {
     width: 125,
