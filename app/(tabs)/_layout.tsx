@@ -3,71 +3,59 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, View, Animated, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS } from '../../src/constants/theme';
 
 interface AnimatedTabIconProps {
   nameFocused: keyof typeof Ionicons.glyphMap;
   nameUnfocused: keyof typeof Ionicons.glyphMap;
   focused: boolean;
-  color: string;
 }
 
 const AnimatedTabIcon: React.FC<AnimatedTabIconProps> = ({
   nameFocused,
   nameUnfocused,
   focused,
-  color,
 }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  const glowAnim = useRef(new Animated.Value(focused ? 1 : 0)).current;
 
   useEffect(() => {
     if (focused) {
-      Animated.parallel([
-        Animated.sequence([
-          Animated.timing(scaleAnim, { toValue: 1.22, duration: 140, useNativeDriver: true }),
-          Animated.spring(scaleAnim, { toValue: 1.08, friction: 5, tension: 80, useNativeDriver: true }),
-        ]),
-        Animated.timing(glowAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+      Animated.sequence([
+        Animated.timing(scaleAnim, { toValue: 1.16, duration: 130, useNativeDriver: true }),
+        Animated.spring(scaleAnim, { toValue: 1.04, friction: 6, tension: 80, useNativeDriver: true }),
       ]).start();
     } else {
-      Animated.parallel([
-        Animated.spring(scaleAnim, { toValue: 1, friction: 6, useNativeDriver: true }),
-        Animated.timing(glowAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
-      ]).start();
+      Animated.spring(scaleAnim, { toValue: 1, friction: 6, useNativeDriver: true }).start();
     }
   }, [focused]);
 
   return (
-    <Animated.View style={[styles.iconContainer, { transform: [{ scale: scaleAnim }] }]}>
+    <Animated.View
+      style={[
+        styles.iconContainer,
+        focused && styles.iconContainerFocused,
+        { transform: [{ scale: scaleAnim }] },
+      ]}
+    >
       <Ionicons
         name={focused ? nameFocused : nameUnfocused}
-        size={21}
-        color={color}
+        size={focused ? 20 : 19}
+        color={focused ? '#854D0E' : '#4B5563'}
       />
-      {focused && (
-        <Animated.View style={[styles.activeIndicatorDot, { opacity: glowAnim }]} />
-      )}
     </Animated.View>
   );
 };
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
-  const bottomInset =
-    Platform.OS === 'android'
-      ? (insets.bottom > 20 ? insets.bottom : 18)
-      : Math.max(insets.bottom, 8);
+  const isAndroid = Platform.OS === 'android';
 
-  const tabBarHeight =
-    Platform.OS === 'android'
-      ? (insets.bottom > 20 ? 56 + insets.bottom : 66)
-      : (52 + insets.bottom);
+  // Android 3-button navigation bar requires safe margin of at least 26dp
+  const effectiveBottomInset = isAndroid
+    ? Math.max(insets.bottom, 26)
+    : Math.max(insets.bottom, 8);
 
-  const tabPaddingBottom =
-    Platform.OS === 'android'
-      ? (insets.bottom > 20 ? insets.bottom + 2 : 10)
-      : (insets.bottom || 8);
+  const tabBarHeight = 56 + effectiveBottomInset;
+  const tabPaddingBottom = effectiveBottomInset + 2;
 
   return (
     <Tabs
@@ -81,10 +69,11 @@ export default function TabLayout() {
           },
         ],
         tabBarItemStyle: {
+          paddingTop: 4,
           paddingBottom: 2,
         },
-        tabBarActiveTintColor: '#CA8A04',
-        tabBarInactiveTintColor: '#6B7280',
+        tabBarActiveTintColor: '#000000',
+        tabBarInactiveTintColor: '#4B5563',
         tabBarLabelStyle: styles.tabLabel,
       }}
     >
@@ -92,12 +81,11 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({ focused }) => (
             <AnimatedTabIcon
               nameFocused="home"
               nameUnfocused="home-outline"
               focused={focused}
-              color={color as string}
             />
           ),
         }}
@@ -115,12 +103,11 @@ export default function TabLayout() {
         name="booking"
         options={{
           title: 'Bookings',
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({ focused }) => (
             <AnimatedTabIcon
               nameFocused="calendar"
               nameUnfocused="calendar-outline"
               focused={focused}
-              color={color as string}
             />
           ),
         }}
@@ -138,12 +125,11 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({ focused }) => (
             <AnimatedTabIcon
               nameFocused="person"
               nameUnfocused="person-outline"
               focused={focused}
-              color={color as string}
             />
           ),
         }}
@@ -155,17 +141,17 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: '#FFFFFF',
-    borderTopWidth: 1.5,
-    borderTopColor: '#E9EAE5',
+    borderTopWidth: 1.2,
+    borderTopColor: '#E2E8F0',
     paddingTop: 6,
     maxWidth: 440,
     width: '100%',
     alignSelf: 'center',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 8,
   },
   tabLabel: {
     fontSize: 10.5,
@@ -176,15 +162,13 @@ const styles = StyleSheet.create({
   iconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
-    height: 26,
+    width: 44,
+    height: 28,
+    borderRadius: 14,
   },
-  activeIndicatorDot: {
-    position: 'absolute',
-    bottom: -4,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#CA8A04',
+  iconContainerFocused: {
+    backgroundColor: '#FEF9C3',
+    borderWidth: 1,
+    borderColor: '#FDE047',
   },
 });

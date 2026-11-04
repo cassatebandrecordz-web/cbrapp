@@ -86,7 +86,7 @@ export default function ContactStudioScreen() {
         contentContainerStyle={[
           styles.scrollContent,
           isDesktopWeb && styles.desktopScrollContent,
-          { paddingBottom: insets.bottom + 64 },
+          { paddingBottom: Math.max(insets.bottom, 24) + 64 },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -167,24 +167,35 @@ export default function ContactStudioScreen() {
 
           <View style={styles.itemDivider} />
 
-          {/* Booking & Production Email */}
-          <View style={styles.contactItemRow}>
-            <View style={[styles.contactIconCircle, { backgroundColor: '#E0F2FE', borderColor: '#BAE6FD' }]}>
-              <Ionicons name="mail" size={16} color="#0284C7" />
+          {/* Booking & Production Email (Structured cleanly to never overflow or wrap awkwardly) */}
+          <View style={styles.emailItemBlock}>
+            <View style={styles.emailHeaderRow}>
+              <View style={[styles.contactIconCircle, { backgroundColor: '#E0F2FE', borderColor: '#BAE6FD' }]}>
+                <Ionicons name="mail" size={16} color="#0284C7" />
+              </View>
+              <View style={styles.emailTitleCol}>
+                <Text style={styles.contactItemLabel}>Bookings & Ingestion Email</Text>
+                <Text style={styles.emailSubLabel}>Direct studio production inbox</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.actionBtnBlue}
+                onPress={() => handleEmail('postproduction@cassatebandrecordz.com')}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="mail-outline" size={12} color="#FFFFFF" />
+                <Text style={styles.actionBtnTextWhite}>Email</Text>
+              </TouchableOpacity>
             </View>
-            <View style={styles.contactItemContent}>
-              <Text style={styles.contactItemLabel}>Bookings & Ingestion Email</Text>
-              <Text style={[styles.contactItemValue, styles.emailText]} numberOfLines={1} ellipsizeMode="tail">
+
+            <TouchableOpacity
+              style={styles.emailAddressPill}
+              onPress={() => handleEmail('postproduction@cassatebandrecordz.com')}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="at-circle" size={14} color="#0284C7" />
+              <Text style={styles.emailAddressPillText} numberOfLines={1}>
                 postproduction@cassatebandrecordz.com
               </Text>
-            </View>
-            <TouchableOpacity
-              style={styles.actionBtnBlue}
-              onPress={() => handleEmail('postproduction@cassatebandrecordz.com')}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="mail-outline" size={12} color="#FFFFFF" />
-              <Text style={styles.actionBtnTextWhite}>Email</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -362,20 +373,22 @@ const styles = StyleSheet.create({
 
   // ── 1. Brand Hero Card ──
   brandHeroCard: {
+    width: '100%',
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: 1.5,
     borderColor: '#EAB308',
-    paddingVertical: 14,
+    paddingVertical: 12,
     paddingHorizontal: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 14,
+    marginBottom: 12,
     shadowColor: '#EAB308',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.16,
-    shadowRadius: 5,
+    shadowOpacity: 0.14,
+    shadowRadius: 4,
     elevation: 2,
+    overflow: 'hidden',
   },
   brandLogoWrap: {
     alignItems: 'center',
@@ -383,18 +396,18 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   brandLogoImg: {
-    width: 145,
-    height: 40,
+    width: 140,
+    height: 38,
   },
   brandTagline: {
     color: '#CA8A04',
-    fontSize: 11.5,
+    fontSize: 11,
     fontWeight: '900',
     letterSpacing: 0.5,
   },
   brandSubline: {
     color: '#6B7280',
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '600',
     marginTop: 2,
   },
@@ -403,8 +416,9 @@ const styles = StyleSheet.create({
   sectionHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 7,
     marginTop: 2,
+    width: '100%',
   },
   sectionHeaderPill: {
     flexDirection: 'row',
@@ -440,17 +454,19 @@ const styles = StyleSheet.create({
 
   // ── Generic Card Container ──
   cardContainer: {
+    width: '100%',
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: '#E5E7EB',
     padding: 12,
-    marginBottom: 14,
+    marginBottom: 12,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 3,
-    elevation: 2,
+    elevation: 1,
+    overflow: 'hidden',
   },
 
   // ── Contact Items ──
@@ -458,7 +474,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    paddingVertical: 3,
+    paddingVertical: 2,
+    width: '100%',
   },
   contactIconCircle: {
     width: 36,
@@ -480,8 +497,8 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   contactItemLabel: {
-    color: '#6B7280',
-    fontSize: 10,
+    color: '#4B5563',
+    fontSize: 10.5,
     fontWeight: '700',
   },
   primaryBadge: {
@@ -504,16 +521,56 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0.2,
   },
-  emailText: {
-    fontSize: 10.5,
-    fontWeight: '700',
+
+  // ── Email Structured Block ──
+  emailItemBlock: {
+    width: '100%',
+    paddingVertical: 2,
   },
+  emailHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    width: '100%',
+    marginBottom: 6,
+  },
+  emailTitleCol: {
+    flex: 1,
+    minWidth: 0,
+    justifyContent: 'center',
+  },
+  emailSubLabel: {
+    color: '#9CA3AF',
+    fontSize: 9,
+    fontWeight: '600',
+    marginTop: 1,
+  },
+  emailAddressPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#F0F9FF',
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+    borderRadius: 8,
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+    width: '100%',
+  },
+  emailAddressPillText: {
+    flex: 1,
+    color: '#0369A1',
+    fontSize: 10.5,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+  },
+
   actionBtnGold: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     backgroundColor: '#FACC15',
-    paddingHorizontal: 10,
+    paddingHorizontal: 11,
     paddingVertical: 6,
     borderRadius: 8,
     shadowColor: '#EAB308',
@@ -527,7 +584,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     backgroundColor: '#16A34A',
-    paddingHorizontal: 10,
+    paddingHorizontal: 11,
     paddingVertical: 6,
     borderRadius: 8,
     shadowColor: '#16A34A',
@@ -541,7 +598,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     backgroundColor: '#0284C7',
-    paddingHorizontal: 10,
+    paddingHorizontal: 11,
     paddingVertical: 6,
     borderRadius: 8,
     shadowColor: '#0284C7',
@@ -571,6 +628,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 10,
+    width: '100%',
   },
   addressTitle: {
     color: '#111827',
@@ -594,21 +652,22 @@ const styles = StyleSheet.create({
 
   // ── Google Map Card ──
   mapCard: {
+    width: '100%',
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: 1.5,
     borderColor: '#EAB308',
     overflow: 'hidden',
-    marginBottom: 14,
+    marginBottom: 12,
     shadowColor: '#EAB308',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.16,
-    shadowRadius: 5,
+    shadowRadius: 4,
     elevation: 2,
   },
   mapGraphicBox: {
     width: '100%',
-    height: 120,
+    height: 115,
     position: 'relative',
   },
   mapGraphicGradient: {
@@ -618,7 +677,7 @@ const styles = StyleSheet.create({
   },
   mapGridLineH1: {
     position: 'absolute',
-    top: 30,
+    top: 28,
     left: 0,
     right: 0,
     height: 1,
@@ -626,7 +685,7 @@ const styles = StyleSheet.create({
   },
   mapGridLineH2: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 28,
     left: 0,
     right: 0,
     height: 1,
@@ -699,11 +758,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 7,
-    paddingVertical: 12,
+    paddingVertical: 11,
   },
   googleMapsBtnText: {
     color: '#000000',
-    fontSize: 12,
+    fontSize: 11.5,
     fontWeight: '900',
     letterSpacing: 0.5,
   },
@@ -713,6 +772,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    width: '100%',
   },
   hoursIconBox: {
     width: 36,

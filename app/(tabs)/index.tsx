@@ -324,7 +324,7 @@ export default function HomeScreen() {
         contentContainerStyle={[
           styles.scrollContent,
           isDesktopWeb && styles.desktopScrollContent,
-          { paddingBottom: Math.max(insets.bottom, 12) + 70 },
+          { paddingBottom: Math.max(insets.bottom, 24) + 90 },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -453,14 +453,17 @@ export default function HomeScreen() {
                     </Text>
                   </View>
 
-                  {/* Clean status slot: COMING SOON pill or empty spacer for Dubbing */}
+                  {/* Clean status slot: COMING SOON pill or BOOK NOW pill for Dubbing */}
                   <View style={styles.cardStatusSlot}>
                     {!isDubbing ? (
                       <View style={styles.soonPill}>
                         <Text style={styles.soonPillText}>COMING SOON</Text>
                       </View>
                     ) : (
-                      <View style={styles.dubbingSpacingSlot} />
+                      <View style={styles.livePill}>
+                        <View style={styles.livePillDot} />
+                        <Text style={styles.livePillText}>BOOK NOW</Text>
+                      </View>
                     )}
                   </View>
                 </TouchableOpacity>
@@ -585,6 +588,15 @@ export default function HomeScreen() {
           </Text>
           <View style={styles.supportBtnRow}>
             <TouchableOpacity
+              style={styles.supportBookingBtn}
+              onPress={handleBookDubbing}
+              activeOpacity={0.82}
+            >
+              <Ionicons name="mic" size={12} color="#000000" />
+              <Text style={styles.supportBookingBtnText}>Book Dubbing</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
               style={styles.supportContactBtn}
               onPress={() => {
                 soundEffects.playClick(850, 0.03);
@@ -592,8 +604,8 @@ export default function HomeScreen() {
               }}
               activeOpacity={0.82}
             >
-              <Ionicons name="call" size={12} color="#000000" />
-              <Text style={styles.supportContactBtnText}>Contact Studio</Text>
+              <Ionicons name="call" size={12} color="#1F2937" />
+              <Text style={styles.supportContactBtnText}>Contact</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -605,7 +617,7 @@ export default function HomeScreen() {
               activeOpacity={0.82}
             >
               <Ionicons name="ticket-outline" size={12} color="#1F2937" />
-              <Text style={styles.supportPassBtnText}>My Passes</Text>
+              <Text style={styles.supportPassBtnText}>Passes</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -854,8 +866,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
-    paddingTop: 7,
-    paddingBottom: 5,
+    paddingTop: 8,
+    paddingBottom: 6,
     paddingHorizontal: 2,
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -866,8 +878,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 3,
     elevation: 1,
-    minHeight: 80,
-    maxHeight: 84,
+    minHeight: 84,
+    maxHeight: 88,
   },
   dubbingCard: {
     borderWidth: 1.3,
@@ -883,8 +895,8 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
   },
   videoCardSize: {
-    minHeight: 80,
-    maxHeight: 84,
+    minHeight: 84,
+    maxHeight: 88,
   },
   cardPressed: {
     borderColor: '#CA8A04',
@@ -926,8 +938,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
   },
-  dubbingSpacingSlot: {
-    height: 12,
+  livePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#FEF9C3',
+    borderWidth: 0.6,
+    borderColor: '#EAB308',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 3,
+  },
+  livePillDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#16A34A',
+  },
+  livePillText: {
+    color: '#854D0E',
+    fontSize: 5.5,
+    fontWeight: '900',
+    letterSpacing: 0.2,
   },
   soonPill: {
     backgroundColor: '#FEF3C7',
@@ -953,7 +985,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5E7EB',
     padding: 12,
-    marginTop: 12,
+    marginTop: 10,
     marginBottom: 16,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
@@ -998,16 +1030,16 @@ const styles = StyleSheet.create({
   },
   supportBtnRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
   },
-  supportContactBtn: {
-    flex: 1,
+  supportBookingBtn: {
+    flex: 1.25,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
+    gap: 4,
     backgroundColor: '#FACC15',
-    paddingVertical: 7,
+    paddingVertical: 8,
     borderRadius: 8,
     shadowColor: '#EAB308',
     shadowOffset: { width: 0, height: 1 },
@@ -1015,9 +1047,26 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
-  supportContactBtnText: {
+  supportBookingBtnText: {
     color: '#000000',
-    fontSize: 11,
+    fontSize: 10.5,
+    fontWeight: '900',
+  },
+  supportContactBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  supportContactBtnText: {
+    color: '#1F2937',
+    fontSize: 10.5,
     fontWeight: '800',
   },
   supportPassBtn: {
@@ -1025,16 +1074,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
+    gap: 4,
     backgroundColor: '#F3F4F6',
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    paddingVertical: 7,
+    paddingVertical: 8,
     borderRadius: 8,
   },
   supportPassBtnText: {
     color: '#1F2937',
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 10.5,
+    fontWeight: '800',
   },
 });
