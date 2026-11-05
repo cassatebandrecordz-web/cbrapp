@@ -43,7 +43,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
         <View style={errorStyles.container}>
           <StatusBar barStyle="light-content" />
           <View style={errorStyles.card}>
-            <Text style={errorStyles.badge}>CASSATE BAND RECORDZ</Text>
+            <Text style={errorStyles.badge}>CBR STUDIO</Text>
             <Text style={errorStyles.title}>Studio Ready</Text>
             <Text style={errorStyles.subtitle}>
               An unexpected display glitch occurred. Tap below to reload the studio experience.
