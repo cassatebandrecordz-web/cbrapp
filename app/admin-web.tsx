@@ -645,17 +645,8 @@ export default function WebAdminPortalScreen() {
     <View style={[styles.container, { paddingTop: Platform.OS === 'web' ? 0 : insets.top }]}>
       {/* ── TOP HEADER BAR ── */}
       <View style={styles.topHeader}>
-        {/* Left: App Back + Brand Logo + SIDEBAR TOGGLE BUTTON */}
+        {/* Left: Brand Logo + SIDEBAR TOGGLE BUTTON */}
         <View style={styles.headerLeftCol}>
-          <TouchableOpacity
-            style={styles.backBtn}
-            onPress={() => router.push('/(tabs)')}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="phone-portrait-outline" size={15} color="#EAB308" />
-            <Text style={styles.backBtnText}>App</Text>
-          </TouchableOpacity>
-
           {/* ── HIDE / UNHIDE SIDEBAR BUTTON ── */}
           <TouchableOpacity
             style={[styles.sidebarToggleBtn, !isSidebarOpen && styles.sidebarToggleBtnCollapsed]}
