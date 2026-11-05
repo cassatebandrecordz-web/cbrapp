@@ -741,11 +741,21 @@ export default function WebAdminPortalScreen() {
         {/* ── LEFT SIDEBAR (COLLAPSIBLE VIA TOGGLE BUTTON) ── */}
         {isSidebarOpen && (
           <ScrollView style={styles.sidebar} showsVerticalScrollIndicator={false}>
-            <View style={styles.sidebarHeaderRow}>
-              <Text style={styles.sidebarHeaderHeading}>NAVIGATION</Text>
+            {/* Sidebar Brand Section (Matches Admin Mockup) */}
+            <View style={styles.sidebarBrandRow}>
+              <Image
+                source={require('../assets/images/brand_logo_boombox.png')}
+                style={styles.sidebarBrandWaveform}
+                resizeMode="contain"
+              />
+              <View style={{ flex: 1, marginLeft: 6 }}>
+                <Text style={styles.sidebarBrandTitle} numberOfLines={1}>CASSATE BAND</Text>
+                <Text style={styles.sidebarBrandSub} numberOfLines={1}>Post Production Studio</Text>
+              </View>
               <TouchableOpacity
                 onPress={() => setIsSidebarOpen(false)}
                 style={styles.sidebarCollapseSmallBtn}
+                activeOpacity={0.7}
               >
                 <Ionicons name="chevron-back" size={14} color="#9CA3AF" />
               </TouchableOpacity>
@@ -953,6 +963,16 @@ export default function WebAdminPortalScreen() {
                 Settings
               </Text>
             </TouchableOpacity>
+
+            {/* Studio Headphones Aesthetic Preview (Matches Bottom-Left of Mockup) */}
+            <View style={styles.sidebarBottomImageWrapper}>
+              <Image
+                source={require('../assets/images/hero_studio.jpg')}
+                style={styles.sidebarBottomImg}
+                resizeMode="cover"
+              />
+              <View style={styles.sidebarBottomGradientOverlay} />
+            </View>
           </ScrollView>
         )}
 
@@ -1060,32 +1080,42 @@ export default function WebAdminPortalScreen() {
                       </View>
                     </View>
 
-                    {/* Project Status Donut Mockup */}
+                    {/* Project Status Donut Chart (Matches Admin Mockup) */}
                     <View style={styles.projectStatusCard}>
                       <Text style={styles.cardHeaderTitle}>Project Status</Text>
                       <View style={styles.donutContainer}>
-                        <View style={styles.donutCircle}>
-                          <Text style={styles.donutBigNumber}>32</Text>
-                          <Text style={styles.donutSub}>Projects</Text>
+                        <View
+                          style={[
+                            styles.donutCircle,
+                            Platform.OS === 'web' && ({
+                              backgroundImage:
+                                'conic-gradient(#F59E0B 0% 25%, #06B6D4 25% 37.5%, #10B981 37.5% 95.8%, #6B7280 95.8% 100%)',
+                            } as any),
+                          ]}
+                        >
+                          <View style={styles.donutCircleInner}>
+                            <Text style={styles.donutBigNumber}>32</Text>
+                            <Text style={styles.donutSub}>Projects</Text>
+                          </View>
                         </View>
                         <View style={styles.donutLegend}>
                           <View style={styles.legendRow}>
-                            <View style={[styles.legendDot, { backgroundColor: '#F59E0B' }]} />
+                            <View style={[styles.legendSquare, { backgroundColor: '#F59E0B' }]} />
                             <Text style={styles.legendLabel}>In Progress</Text>
                             <Text style={styles.legendCount}>12</Text>
                           </View>
                           <View style={styles.legendRow}>
-                            <View style={[styles.legendDot, { backgroundColor: '#06B6D4' }]} />
+                            <View style={[styles.legendSquare, { backgroundColor: '#06B6D4' }]} />
                             <Text style={styles.legendLabel}>Under Review</Text>
                             <Text style={styles.legendCount}>6</Text>
                           </View>
                           <View style={styles.legendRow}>
-                            <View style={[styles.legendDot, { backgroundColor: '#10B981' }]} />
+                            <View style={[styles.legendSquare, { backgroundColor: '#10B981' }]} />
                             <Text style={styles.legendLabel}>Completed</Text>
                             <Text style={styles.legendCount}>28</Text>
                           </View>
                           <View style={styles.legendRow}>
-                            <View style={[styles.legendDot, { backgroundColor: '#EF4444' }]} />
+                            <View style={[styles.legendSquare, { backgroundColor: '#6B7280' }]} />
                             <Text style={styles.legendLabel}>On Hold</Text>
                             <Text style={styles.legendCount}>2</Text>
                           </View>
@@ -1120,15 +1150,15 @@ export default function WebAdminPortalScreen() {
                         </View>
                       </View>
 
-                      {/* Bookings Table Header */}
+                      {/* Bookings Table Header (Matches Admin Mockup) */}
                       <View style={styles.tableHeader}>
                         <Text style={[styles.th, { width: 55 }]}>#</Text>
-                        <Text style={[styles.th, { flex: 1.3 }]}>Customer (Username)</Text>
+                        <Text style={[styles.th, { flex: 1.3 }]}>Customer</Text>
                         <Text style={[styles.th, { flex: 1.1 }]}>Service</Text>
                         <Text style={[styles.th, { flex: 1.3 }]}>Date & Time</Text>
                         <Text style={[styles.th, { width: 75 }]}>Amount</Text>
                         <Text style={[styles.th, { width: 85 }]}>Status</Text>
-                        <Text style={[styles.th, { width: 45, textAlign: 'center' }]}>Pass</Text>
+                        <Text style={[styles.th, { width: 45, textAlign: 'center' }]}>Action</Text>
                       </View>
 
                       {/* Bookings Table Body */}
@@ -1298,15 +1328,21 @@ export default function WebAdminPortalScreen() {
                     </View>
                   </View>
 
-                  {/* Banner Toggle List */}
+                  {/* Banner Toggle List (Matches Admin Mockup) */}
                   <View style={styles.bannerToggleList}>
                     {bannerSlides.map((b) => (
                       <View key={b.id} style={styles.bannerToggleItem}>
                         <View style={styles.bannerThumbPreview}>
-                          <Ionicons
-                            name={b.id === 'dubbing' ? 'mic' : b.id === 'vo' ? 'musical-notes' : 'pulse'}
-                            size={14}
-                            color="#FACC15"
+                          <Image
+                            source={
+                              b.id === 'dubbing'
+                                ? require('../assets/images/services/dubbing.jpg')
+                                : b.id === 'vo'
+                                ? require('../assets/images/services/voice_over.jpg')
+                                : require('../assets/images/services/mixing.jpg')
+                            }
+                            style={styles.bannerThumbImage}
+                            resizeMode="cover"
                           />
                         </View>
                         <View style={{ flex: 1, marginHorizontal: 8 }}>
@@ -1326,6 +1362,13 @@ export default function WebAdminPortalScreen() {
                           trackColor={{ false: '#374151', true: '#FACC15' }}
                           thumbColor="#FFFFFF"
                         />
+                        <TouchableOpacity
+                          style={{ marginLeft: 8, padding: 2 }}
+                          onPress={() => showNotice(`Banner options for ${b.title}`)}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="ellipsis-vertical" size={15} color="#6B7280" />
+                        </TouchableOpacity>
                       </View>
                     ))}
                   </View>
@@ -2559,32 +2602,61 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
 
-  // ── Sidebar (Medium-Sized Compact Width: 136px) ──
+  // ── Sidebar (Medium-Sized Compact Width: 156px) ──
   sidebar: {
-    width: 136,
-    minWidth: 136,
-    maxWidth: 136,
+    width: 156,
+    minWidth: 156,
+    maxWidth: 156,
     backgroundColor: '#0E0E16',
     borderRightWidth: 1,
     borderRightColor: '#1A1A26',
     paddingVertical: 10,
-    paddingHorizontal: 5,
+    paddingHorizontal: 6,
   },
-  sidebarHeaderRow: {
+  sidebarBrandRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 6,
-    marginBottom: 6,
+    paddingHorizontal: 4,
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1F1F2E',
+    marginBottom: 8,
   },
-  sidebarHeaderHeading: {
-    color: '#6B7280',
-    fontSize: 8.5,
+  sidebarBrandWaveform: {
+    width: 22,
+    height: 22,
+  },
+  sidebarBrandTitle: {
+    color: '#FACC15',
+    fontSize: 9.5,
     fontWeight: '900',
-    letterSpacing: 0.8,
+    letterSpacing: 0.5,
+  },
+  sidebarBrandSub: {
+    color: '#6B7280',
+    fontSize: 7.5,
+    fontWeight: '600',
   },
   sidebarCollapseSmallBtn: {
     padding: 2,
+  },
+  sidebarBottomImageWrapper: {
+    marginTop: 16,
+    marginBottom: 10,
+    borderRadius: 8,
+    overflow: 'hidden',
+    height: 95,
+    position: 'relative',
+    borderWidth: 1,
+    borderColor: '#1F1F2E',
+  },
+  sidebarBottomImg: {
+    width: '100%',
+    height: '100%',
+  },
+  sidebarBottomGradientOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(10, 10, 15, 0.35)',
   },
   sidebarItem: {
     flexDirection: 'row',
@@ -2817,16 +2889,26 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   donutCircle: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    borderWidth: 6,
+    width: 82,
+    height: 82,
+    borderRadius: 41,
+    borderWidth: 7,
     borderColor: '#10B981',
     borderTopColor: '#F59E0B',
     borderRightColor: '#06B6D4',
+    borderLeftColor: '#6B7280',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#181824',
+    overflow: 'hidden',
+  },
+  donutCircleInner: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#12121A',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   donutBigNumber: {
     color: '#FFFFFF',
@@ -2835,22 +2917,22 @@ const styles = StyleSheet.create({
   },
   donutSub: {
     color: '#9CA3AF',
-    fontSize: 8,
+    fontSize: 8.5,
     fontWeight: '700',
   },
   donutLegend: {
     flex: 1,
-    gap: 4,
+    gap: 5,
   },
   legendRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 7,
   },
-  legendDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+  legendSquare: {
+    width: 8,
+    height: 8,
+    borderRadius: 2,
   },
   legendLabel: {
     color: '#9CA3AF',
@@ -3090,12 +3172,15 @@ const styles = StyleSheet.create({
     borderColor: '#242436',
   },
   bannerThumbPreview: {
-    width: 28,
-    height: 28,
-    borderRadius: 6,
+    width: 36,
+    height: 26,
+    borderRadius: 5,
     backgroundColor: '#262638',
-    alignItems: 'center',
-    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  bannerThumbImage: {
+    width: '100%',
+    height: '100%',
   },
   bannerItemTitle: {
     color: '#FFFFFF',
