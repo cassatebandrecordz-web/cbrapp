@@ -91,7 +91,7 @@ export default function ServiceDetailsScreen() {
             <View style={styles.imageOverlayBadge}>
               {isDubbing ? (
                 <View style={styles.heroActiveBadge}>
-                  <Text style={styles.heroActiveBadgeText}>ACTIVE RESERVATION SUITE</Text>
+                  <Text style={styles.heroActiveBadgeText}>ACTIVE</Text>
                 </View>
               ) : (
                 <View style={styles.heroSoonBadge}>

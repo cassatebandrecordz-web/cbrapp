@@ -128,10 +128,10 @@ export default function SlotBookingScreen() {
   useEffect(() => {
     let isMounted = true;
     StudioApi.getSlots(selectedDayObj.fullDate).then((res) => {
-      if (isMounted && res && res.bookedSlots && res.bookedSlots.length > 0) {
+      if (isMounted && res && Array.isArray(res.bookedSlots)) {
         setBookedSlotsByDate((prev) => ({
           ...prev,
-          [selectedDayId]: Array.from(new Set([...(prev[selectedDayId] || []), ...res.bookedSlots])),
+          [selectedDayId]: res.bookedSlots,
         }));
       }
     }).catch(() => {
@@ -140,10 +140,10 @@ export default function SlotBookingScreen() {
 
     // Real-time WebSocket subscription (updates screen instantly when another client books)
     const unsubscribe = StudioApi.subscribeToDateSlots(selectedDayObj.fullDate, (latestBooked) => {
-      if (isMounted && latestBooked && latestBooked.length > 0) {
+      if (isMounted && Array.isArray(latestBooked)) {
         setBookedSlotsByDate((prev) => ({
           ...prev,
-          [selectedDayId]: Array.from(new Set([...(prev[selectedDayId] || []), ...latestBooked])),
+          [selectedDayId]: latestBooked,
         }));
       }
     });
@@ -516,7 +516,7 @@ export default function SlotBookingScreen() {
                   <View style={{ flex: 1, marginLeft: 12 }}>
                     <View style={styles.activePillRow}>
                       <View style={styles.liveGreenDot} />
-                      <Text style={styles.activePillText}>ACTIVE RESERVATION SUITE</Text>
+                      <Text style={styles.activePillText}>ACTIVE</Text>
                     </View>
                     <Text style={styles.studioHeroTitle}>Dubbing Studio</Text>
                     <Text style={styles.studioHeroRate}>
