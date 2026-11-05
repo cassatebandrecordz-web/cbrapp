@@ -459,10 +459,10 @@ export default function SlotBookingScreen() {
         totalPrice: totalPrice,
         advanceAmount: totalPrice,
         paymentMethod: 'UPI Full Payment',
-        clientName: user?.name || 'Studio Client',
+        clientName: user?.name || (user?.isGuest ? 'Guest Producer' : 'Studio Client'),
         clientPhone: user?.phone || '+91 90252 53695',
-        clientEmail: user?.email || 'client@cassatebandrecordz.com',
-        userId: user?.id || 'client-guest',
+        clientEmail: user?.email || (user?.isGuest ? 'guest@cassate.local' : 'client@cassatebandrecordz.com'),
+        userId: user?.id || (user?.isGuest ? 'guest' : 'client-user'),
       });
 
       router.push({

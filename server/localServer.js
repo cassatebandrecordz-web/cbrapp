@@ -219,13 +219,26 @@ const server = http.createServer(async (req, res) => {
       }, 201);
     }
 
-    // 5. GET /api/bookings
+    // 5. GET /api/bookings (User-Specific Filtered Passes)
     if (path === '/bookings' && method === 'GET') {
       const userId = parsedUrl.query.userId;
+      const email = parsedUrl.query.email ? parsedUrl.query.email.toLowerCase().trim() : null;
       let list = Object.values(db.bookings);
 
-      if (userId && userId !== 'admin') {
-        list = list.filter((b) => b.userId === userId || b.userId === 'guest');
+      if (email) {
+        // Strictly return only bookings matching this user's email
+        list = list.filter(
+          (b) =>
+            (b.clientEmail && b.clientEmail.toLowerCase().trim() === email) ||
+            (b.client_email && b.client_email.toLowerCase().trim() === email)
+        );
+      } else if (userId && userId !== 'admin') {
+        if (userId.startsWith('guest')) {
+          // Guests start with zero prior passes
+          list = [];
+        } else {
+          list = list.filter((b) => b.userId === userId);
+        }
       }
 
       list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());

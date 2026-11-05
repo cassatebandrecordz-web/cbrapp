@@ -175,16 +175,19 @@ export const StudioApi = {
   },
 
   /**
-   * Fetch all bookings from Supabase / API
+   * Fetch user-specific bookings from Supabase / API
    */
   async getBookings(userId?: string, email?: string): Promise<any[]> {
-    if (isSupabaseConfigured) {
+    if (isSupabaseConfigured && email) {
       const list = await SupabaseStudioService.getAllBookings(email);
       if (list && list.length > 0) return list;
     }
 
     try {
-      const res = await fetch(`${API_BASE}/bookings${userId ? `?userId=${encodeURIComponent(userId)}` : ''}`);
+      const qParams = new URLSearchParams();
+      if (userId) qParams.append('userId', userId);
+      if (email) qParams.append('email', email);
+      const res = await fetch(`${API_BASE}/bookings?${qParams.toString()}`);
       if (!res.ok) throw new Error('Failed to fetch bookings');
       const data = await res.json();
       return data.bookings || [];

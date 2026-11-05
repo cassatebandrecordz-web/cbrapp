@@ -26,7 +26,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const { user, bookings, projects, updateProfile } = useApp();
+  const { user, bookings, projects, updateProfile, isGuest } = useApp();
 
   const [name, setName] = useState(user.name);
   const [phone, setPhone] = useState(user.phone);
@@ -120,12 +120,14 @@ export default function ProfileScreen() {
               </View>
 
               <View style={{ flex: 1, marginLeft: 14 }}>
-                <Text style={styles.userName}>{name}</Text>
+                <Text style={styles.userName}>{isGuest ? 'Guest Producer' : name}</Text>
                 <View style={styles.roleTag}>
-                  <Ionicons name="shield-checkmark" size={11} color="#CA8A04" />
-                  <Text style={styles.userRole}>Studio Client</Text>
+                  <Ionicons name={isGuest ? 'person-outline' : 'shield-checkmark'} size={11} color="#CA8A04" />
+                  <Text style={styles.userRole}>{isGuest ? 'Guest Mode (Fresh Start)' : 'Verified Client'}</Text>
                 </View>
-                <Text style={styles.userPhone}>{phone}</Text>
+                <Text style={styles.userPhone}>
+                  {isGuest ? 'Sign in to sync previous passes' : user.email || phone}
+                </Text>
               </View>
 
               <TouchableOpacity
@@ -182,8 +184,12 @@ export default function ProfileScreen() {
                 <Ionicons name="log-in-outline" size={18} color="#000000" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.switchAccountTitle}>Studio Login / Switch Account</Text>
-                <Text style={styles.switchAccountSub}>Sign in with Email or Phone to sync bookings</Text>
+                <Text style={styles.switchAccountTitle}>
+                  {isGuest ? 'Sign In / Register Account' : 'Switch Studio Account'}
+                </Text>
+                <Text style={styles.switchAccountSub}>
+                  {isGuest ? 'Sign in with Email or Phone to sync your previous passes' : `Active account: ${user.email || user.name}`}
+                </Text>
               </View>
             </View>
             <Ionicons name="chevron-forward" size={17} color="#CA8A04" />

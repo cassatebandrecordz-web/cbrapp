@@ -190,7 +190,7 @@ export const SupabaseStudioService = {
     try {
       let query = supabase.from('bookings').select('*').order('created_at', { ascending: false });
       if (clientEmail) {
-        query = query.eq('client_email', clientEmail);
+        query = query.ilike('client_email', clientEmail.trim());
       }
       const { data, error } = await query;
       if (error) throw error;

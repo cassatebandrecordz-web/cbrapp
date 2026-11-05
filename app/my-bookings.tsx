@@ -14,7 +14,7 @@ import { useApp } from '../src/context/AppContext';
 export default function MyBookingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { bookings, cancelBooking, refreshBookings } = useApp();
+  const { bookings, cancelBooking, refreshBookings, user, isGuest } = useApp();
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = async () => {
@@ -90,12 +90,26 @@ export default function MyBookingsScreen() {
           })}
         </View>
 
-        {/* Bookings List */}
+        {/* Bookings List (Account-Synced Passes Only) */}
         {filteredBookings.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="calendar-outline" size={44} color="#64748B" />
             <Text style={styles.emptyTitle}>No Sessions Found</Text>
-            <Text style={styles.emptySub}>You have no bookings under this filter.</Text>
+            <Text style={styles.emptySub}>
+              {isGuest
+                ? 'You are exploring in Guest Mode with a fresh start page. Book a studio session to generate an entry pass, or Sign In to sync your registered account passes.'
+                : `No bookings found under "${activeTab}" for ${user.email || 'your account'}.`}
+            </Text>
+            {isGuest && (
+              <TouchableOpacity
+                style={styles.signInSyncBtn}
+                onPress={() => router.push('/login')}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="log-in-outline" size={15} color="#000000" />
+                <Text style={styles.signInSyncBtnText}>Sign In to Sync Previous Passes</Text>
+              </TouchableOpacity>
+            )}
           </View>
         ) : (
           <View style={styles.bookingsList}>
@@ -239,6 +253,24 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
     fontSize: 12,
     marginTop: 4,
+    textAlign: 'center',
+    paddingHorizontal: 20,
+    lineHeight: 18,
+  },
+  signInSyncBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FACC15',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginTop: 16,
+  },
+  signInSyncBtnText: {
+    color: '#000000',
+    fontSize: 12,
+    fontWeight: '900',
   },
   bookingsList: {
     gap: 12,

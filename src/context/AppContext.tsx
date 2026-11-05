@@ -64,23 +64,27 @@ export interface UserProfile {
   tier?: string;
   studioCredits?: number;
   isAdmin: boolean;
+  isGuest?: boolean;
 }
 
 const DEFAULT_USER: UserProfile = {
-  id: 'usr-1',
-  name: 'Devon Vance',
-  email: 'client@cassaterecordz.com',
+  id: 'usr-guest',
+  name: 'Studio Producer',
+  email: '',
   phone: '+91 90252 53695',
-  company: 'Vance Audio Visual Works',
+  company: 'Studio Producer',
   role: 'Studio Client',
   tier: 'Studio Client',
-  studioCredits: 450,
+  studioCredits: 0,
   isAdmin: false,
+  isGuest: true,
 };
 
 interface AppContextType {
   user: UserProfile;
   isLoggedIn: boolean;
+  isGuest: boolean;
+  continueAsGuest: () => void;
   login: (params: { identifier: string; password?: string; device?: string; loginLocation?: string }) => Promise<{ success: boolean; error?: string }>;
   register: (params: { name: string; email: string; password?: string; phone?: string; device?: string; loginLocation?: string }) => Promise<{ success: boolean; error?: string }>;
   loginDemo: (override?: Partial<UserProfile>) => void;
@@ -138,18 +142,38 @@ function mapDbRowToBookingItem(b: any): BookingItem {
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile>(DEFAULT_USER);
   const [projects, setProjects] = useState<ProjectItem[]>(INITIAL_PROJECTS);
-  const [bookings, setBookings] = useState<BookingItem[]>(INITIAL_BOOKINGS);
+  const [bookings, setBookings] = useState<BookingItem[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS);
   const [bookingDraft, setBookingDraft] = useState<BookingDraft>(DEFAULT_BOOKING_DRAFT);
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isGuest, setIsGuest] = useState(false);
 
-  // ── Database Login & Registration ──
+  // ── Guest Mode: Fresh Start Page with Zero Prior Passes ──
+  const continueAsGuest = () => {
+    setUser({
+      id: `guest-${Date.now().toString().slice(-4)}`,
+      name: 'Guest Producer',
+      email: '',
+      phone: '',
+      company: 'Guest Studio Producer',
+      role: 'Guest User',
+      tier: 'Guest',
+      studioCredits: 0,
+      isAdmin: false,
+      isGuest: true,
+    });
+    setIsLoggedIn(true);
+    setIsGuest(true);
+    setBookings([]); // Clean fresh start: no previous passes
+  };
+
+  // ── Database Login (Syncs ONLY the Signed-In Account's Passes) ──
   const login = async (params: { identifier: string; password?: string; device?: string; loginLocation?: string }) => {
     try {
       const res = await StudioApi.login(params.identifier, params.password, params.device, params.loginLocation);
       if (res.success && res.user) {
-        setUser({
+        const loggedUser: UserProfile = {
           id: res.user.id || `usr-${Date.now().toString().slice(-5)}`,
           name: res.user.name || params.identifier.split('@')[0],
           email: res.user.email || params.identifier,
@@ -157,8 +181,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           company: res.user.company || 'Studio Producer',
           role: res.user.role || 'Studio Client',
           isAdmin: Boolean(res.user.is_admin || res.user.isAdmin),
-        });
+          isGuest: false,
+        };
+        setUser(loggedUser);
         setIsLoggedIn(true);
+        setIsGuest(false);
+
+        // Sync ONLY passes belonging to this specific user account
+        try {
+          const liveList = await StudioApi.getBookings(loggedUser.id, loggedUser.email);
+          if (Array.isArray(liveList)) {
+            const userEmailNorm = (loggedUser.email || '').trim().toLowerCase();
+            const userIdNorm = loggedUser.id;
+
+            const userOnly = liveList.filter((b: any) => {
+              const bEmail = (b.client_email || b.clientEmail || '').trim().toLowerCase();
+              const bUserId = b.user_id || b.userId;
+              return (bEmail && bEmail === userEmailNorm) || (bUserId && bUserId === userIdNorm);
+            });
+
+            setBookings(userOnly.map(mapDbRowToBookingItem));
+          } else {
+            setBookings([]);
+          }
+        } catch {
+          setBookings([]);
+        }
+
         return { success: true };
       }
       return { success: false, error: res.error || 'Invalid credentials' };
@@ -167,11 +216,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // ── Database Registration ──
   const register = async (params: { name: string; email: string; password?: string; phone?: string; device?: string; loginLocation?: string }) => {
     try {
       const res = await StudioApi.register(params);
       if (res.success && res.user) {
-        setUser({
+        const newUser: UserProfile = {
           id: res.user.id || `usr-${Date.now().toString().slice(-5)}`,
           name: res.user.name || params.name,
           email: res.user.email || params.email,
@@ -179,8 +229,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           company: 'Studio Producer',
           role: 'Studio Client',
           isAdmin: false,
-        });
+          isGuest: false,
+        };
+        setUser(newUser);
         setIsLoggedIn(true);
+        setIsGuest(false);
+        // Fresh registration starts with 0 passes until they book their first session
+        setBookings([]);
         return { success: true };
       }
       return { success: false, error: res.error || 'Registration failed' };
@@ -189,44 +244,67 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // ── Sync with Supabase Database ──
+  // ── Sync with Supabase Database (Account-Specific Only) ──
   const refreshBookings = useCallback(async () => {
     try {
+      if (!isLoggedIn || isGuest || !user.email) {
+        if (isGuest) setBookings([]);
+        return;
+      }
       const liveList = await StudioApi.getBookings(user.id, user.email);
-      if (liveList && liveList.length > 0) {
-        const formatted = liveList.map(mapDbRowToBookingItem);
-        setBookings(formatted);
+      if (Array.isArray(liveList)) {
+        const userEmailNorm = (user.email || '').trim().toLowerCase();
+        const userIdNorm = user.id;
+
+        const userOnly = liveList.filter((b: any) => {
+          const bEmail = (b.client_email || b.clientEmail || '').trim().toLowerCase();
+          const bUserId = b.user_id || b.userId;
+          return (bEmail && bEmail === userEmailNorm) || (bUserId && bUserId === userIdNorm);
+        });
+
+        setBookings(userOnly.map(mapDbRowToBookingItem));
       }
     } catch (err) {
       console.warn('[AppContext] Failed to refresh bookings:', err);
     }
-  }, [user.id, user.email]);
+  }, [isLoggedIn, isGuest, user.id, user.email]);
 
   useEffect(() => {
-    // 1. Fetch live bookings on mount
+    // 1. Fetch live bookings on mount (if authenticated user)
     refreshBookings();
 
-    // 2. Real-time subscription to live database changes via WebSockets
+    // 2. Real-time subscription filtered strictly to the logged-in user
     const unsubscribe = StudioApi.subscribeToBookings((updatedList) => {
-      if (updatedList && updatedList.length > 0) {
-        const formatted = updatedList.map(mapDbRowToBookingItem);
-        setBookings(formatted);
+      if (Array.isArray(updatedList) && isLoggedIn && !isGuest && user.email) {
+        const userEmailNorm = (user.email || '').trim().toLowerCase();
+        const userIdNorm = user.id;
+
+        const userOnly = updatedList.filter((b: any) => {
+          const bEmail = (b.client_email || b.clientEmail || '').trim().toLowerCase();
+          const bUserId = b.user_id || b.userId;
+          return (bEmail && bEmail === userEmailNorm) || (bUserId && bUserId === userIdNorm);
+        });
+
+        setBookings(userOnly.map(mapDbRowToBookingItem));
       }
     });
 
     return () => {
       if (typeof unsubscribe === 'function') unsubscribe();
     };
-  }, [refreshBookings]);
+  }, [refreshBookings, isLoggedIn, isGuest, user.email, user.id]);
 
   const loginDemo = (override?: Partial<UserProfile>) => {
     setUser((prev) => ({ ...prev, ...override }));
     setIsLoggedIn(true);
+    setIsGuest(false);
   };
 
   const logout = () => {
     setIsLoggedIn(false);
+    setIsGuest(false);
     setUser(DEFAULT_USER);
+    setBookings([]);
   };
 
   const updateProfile = (updates: Partial<UserProfile>) => {
@@ -389,6 +467,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       value={{
         user,
         isLoggedIn,
+        isGuest,
+        continueAsGuest,
         login,
         register,
         loginDemo,

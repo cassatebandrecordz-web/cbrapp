@@ -22,7 +22,7 @@ export default function ConfirmedPassesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const { bookings, refreshBookings } = useApp();
+  const { bookings, refreshBookings, user, isGuest } = useApp();
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = async () => {
@@ -65,9 +65,19 @@ export default function ConfirmedPassesScreen() {
             <View style={styles.countBadge}>
               <Text style={styles.countBadgeText}>{bookings.length}</Text>
             </View>
+            {isGuest && (
+              <View style={styles.guestStatusPill}>
+                <Ionicons name="person-outline" size={10} color="#CA8A04" />
+                <Text style={styles.guestStatusPillText}>Guest</Text>
+              </View>
+            )}
           </View>
-          <Text style={styles.headerSubtitle}>
-            Official entry passes for your reserved studio sessions
+          <Text style={styles.headerSubtitle} numberOfLines={1}>
+            {isGuest
+              ? 'Guest Mode • Fresh session • Sign in to sync passes'
+              : user.email
+              ? `Synced with ${user.email}`
+              : 'Official entry passes for your reserved sessions'}
           </Text>
         </View>
 
@@ -113,7 +123,7 @@ export default function ConfirmedPassesScreen() {
           })}
         </View>
 
-        {/* ── Confirmed Passes List ── */}
+        {/* ── Confirmed Passes List (Fresh Start for Guests / Account-Synced Passes) ── */}
         {filteredBookings.length === 0 ? (
           <GlowCard style={styles.emptyCard}>
             <View style={styles.emptyIconCircle}>
@@ -121,17 +131,32 @@ export default function ConfirmedPassesScreen() {
             </View>
             <Text style={styles.emptyTitle}>No Studio Passes Yet</Text>
             <Text style={styles.emptySubtitle}>
-              You don't have any confirmed bookings under "{activeTab}". Select a studio service or tap below to reserve your slot!
+              {isGuest
+                ? 'You are exploring in Guest Mode with a fresh start page. Book your first studio session to generate an entry pass, or Sign In with your registered account to sync previous passes.'
+                : `You don't have any confirmed bookings under "${activeTab}". Book a studio session below to generate your official pass!`}
             </Text>
 
-            <TouchableOpacity
-              style={styles.emptyCtaBtn}
-              onPress={() => router.push('/booking/select')}
-              activeOpacity={0.85}
-            >
-              <Ionicons name="calendar-outline" size={16} color="#FFFFFF" />
-              <Text style={styles.emptyCtaBtnText}>Book a Studio Slot →</Text>
-            </TouchableOpacity>
+            <View style={styles.emptyButtonsCol}>
+              <TouchableOpacity
+                style={styles.emptyCtaBtn}
+                onPress={() => router.push('/booking/select')}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="calendar-outline" size={16} color="#FFFFFF" />
+                <Text style={styles.emptyCtaBtnText}>Book a Studio Slot →</Text>
+              </TouchableOpacity>
+
+              {isGuest && (
+                <TouchableOpacity
+                  style={styles.emptySignInBtn}
+                  onPress={() => router.push('/login')}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons name="log-in-outline" size={16} color="#000000" />
+                  <Text style={styles.emptySignInBtnText}>Sign In to Sync Previous Passes</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </GlowCard>
         ) : (
           <View style={styles.passListContainer}>
@@ -399,15 +424,54 @@ const styles = StyleSheet.create({
   emptyCtaBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 6,
     backgroundColor: '#111827',
     paddingHorizontal: 18,
     paddingVertical: 11,
     borderRadius: 10,
+    width: '100%',
   },
   emptyCtaBtnText: {
     color: '#FFFFFF',
     fontSize: 12.5,
+    fontWeight: '800',
+  },
+  emptyButtonsCol: {
+    width: '100%',
+    gap: 10,
+    marginTop: 4,
+  },
+  emptySignInBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#FACC15',
+    paddingHorizontal: 18,
+    paddingVertical: 11,
+    borderRadius: 10,
+    width: '100%',
+  },
+  emptySignInBtnText: {
+    color: '#000000',
+    fontSize: 12.5,
+    fontWeight: '900',
+  },
+  guestStatusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#FEF9C3',
+    borderWidth: 1,
+    borderColor: '#FDE047',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  guestStatusPillText: {
+    color: '#CA8A04',
+    fontSize: 9.5,
     fontWeight: '800',
   },
   passListContainer: {

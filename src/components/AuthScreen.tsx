@@ -28,7 +28,7 @@ export default function AuthScreen({ initialTab = 'login' }: AuthScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const { login, register, loginDemo } = useApp();
+  const { login, register, continueAsGuest } = useApp();
 
   const [activeTab, setActiveTab] = useState<'login' | 'register'>(initialTab);
 
@@ -41,6 +41,13 @@ export default function AuthScreen({ initialTab = 'login' }: AuthScreenProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Guest Mode Handler (Fresh Start Page with 0 passes)
+  const handleContinueAsGuest = () => {
+    soundEffects.playClick(850, 0.03);
+    continueAsGuest();
+    router.replace('/(tabs)');
+  };
 
   // Mandatory Sign In Handler (verifies with Database)
   const handleSignIn = async () => {
@@ -203,9 +210,20 @@ export default function AuthScreen({ initialTab = 'login' }: AuthScreenProps) {
               <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
             </TouchableOpacity>
 
-            <View style={styles.mustLoginBadge}>
-              <Ionicons name="lock-closed" size={12} color="#FACC15" />
-              <Text style={styles.mustLoginBadgeText}>Studio Account Required</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <TouchableOpacity
+                style={styles.topGuestPill}
+                onPress={handleContinueAsGuest}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="person-outline" size={12} color="#FACC15" />
+                <Text style={styles.topGuestPillText}>Guest User</Text>
+              </TouchableOpacity>
+
+              <View style={styles.mustLoginBadge}>
+                <Ionicons name="lock-closed" size={12} color="#FACC15" />
+                <Text style={styles.mustLoginBadgeText}>Studio Account</Text>
+              </View>
             </View>
           </View>
 
@@ -434,6 +452,37 @@ export default function AuthScreen({ initialTab = 'login' }: AuthScreenProps) {
               </TouchableOpacity>
             </View>
 
+            {/* ── Option: Continue as Guest User (Fresh Start Page) ── */}
+            <View style={styles.guestSectionBox}>
+              <View style={styles.dividerRow}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>or continue without account</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              <TouchableOpacity
+                style={styles.guestUserCard}
+                onPress={handleContinueAsGuest}
+                activeOpacity={0.8}
+              >
+                <View style={styles.guestUserIconBox}>
+                  <Ionicons name="person-outline" size={18} color="#FACC15" />
+                </View>
+                <View style={{ flex: 1, marginLeft: 10 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={styles.guestUserTitle}>Continue as Guest User</Text>
+                    <View style={styles.freshStartBadge}>
+                      <Text style={styles.freshStartBadgeText}>Fresh Start</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.guestUserSub}>
+                    Start with a fresh booking page & zero prior passes
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={17} color="#FACC15" />
+              </TouchableOpacity>
+            </View>
+
             {/* ── Footer Switch Link ── */}
             <View style={styles.footerSection}>
               <Text style={styles.footerPrompt}>
@@ -507,6 +556,22 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(250, 204, 21, 0.35)',
   },
   mustLoginBadgeText: {
+    color: '#FACC15',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  topGuestPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 18,
+    backgroundColor: '#181822',
+    borderWidth: 1,
+    borderColor: '#374151',
+  },
+  topGuestPillText: {
     color: '#FACC15',
     fontSize: 11,
     fontWeight: '800',
@@ -708,6 +773,49 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 11,
     fontWeight: '700',
+  },
+  guestSectionBox: {
+    width: '100%',
+    marginTop: 10,
+  },
+  guestUserCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#13131A',
+    borderWidth: 1,
+    borderColor: '#2E2E3E',
+    borderRadius: 14,
+    padding: 12,
+    marginTop: 6,
+  },
+  guestUserIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(250, 204, 21, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  guestUserTitle: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  guestUserSub: {
+    color: '#9CA3AF',
+    fontSize: 10.5,
+    marginTop: 2,
+  },
+  freshStartBadge: {
+    backgroundColor: 'rgba(250, 204, 21, 0.18)',
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    borderRadius: 6,
+  },
+  freshStartBadgeText: {
+    color: '#FACC15',
+    fontSize: 9,
+    fontWeight: '900',
   },
   footerSection: {
     alignItems: 'center',
