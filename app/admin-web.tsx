@@ -757,7 +757,7 @@ export default function WebAdminPortalScreen() {
             >
               <Ionicons
                 name="grid"
-                size={16}
+                size={15}
                 color={activeMenu === 'dashboard' ? '#000000' : '#9CA3AF'}
               />
               <Text
@@ -765,6 +765,7 @@ export default function WebAdminPortalScreen() {
                   styles.sidebarText,
                   activeMenu === 'dashboard' && styles.sidebarTextActive,
                 ]}
+                numberOfLines={1}
               >
                 Dashboard
               </Text>
@@ -776,7 +777,7 @@ export default function WebAdminPortalScreen() {
             >
               <Ionicons
                 name="calendar-outline"
-                size={16}
+                size={15}
                 color={activeMenu === 'bookings' ? '#000000' : '#9CA3AF'}
               />
               <Text
@@ -784,6 +785,7 @@ export default function WebAdminPortalScreen() {
                   styles.sidebarText,
                   activeMenu === 'bookings' && styles.sidebarTextActive,
                 ]}
+                numberOfLines={1}
               >
                 Bookings
               </Text>
@@ -795,7 +797,7 @@ export default function WebAdminPortalScreen() {
             >
               <Ionicons
                 name="folder-outline"
-                size={16}
+                size={15}
                 color={activeMenu === 'projects' ? '#000000' : '#9CA3AF'}
               />
               <Text
@@ -803,6 +805,7 @@ export default function WebAdminPortalScreen() {
                   styles.sidebarText,
                   activeMenu === 'projects' && styles.sidebarTextActive,
                 ]}
+                numberOfLines={1}
               >
                 Projects
               </Text>
@@ -814,7 +817,7 @@ export default function WebAdminPortalScreen() {
             >
               <Ionicons
                 name="card-outline"
-                size={16}
+                size={15}
                 color={activeMenu === 'payments' ? '#000000' : '#9CA3AF'}
               />
               <Text
@@ -822,6 +825,7 @@ export default function WebAdminPortalScreen() {
                   styles.sidebarText,
                   activeMenu === 'payments' && styles.sidebarTextActive,
                 ]}
+                numberOfLines={1}
               >
                 Payments
               </Text>
@@ -833,7 +837,7 @@ export default function WebAdminPortalScreen() {
             >
               <Ionicons
                 name="people-outline"
-                size={16}
+                size={15}
                 color={activeMenu === 'customers' ? '#000000' : '#9CA3AF'}
               />
               <Text
@@ -841,6 +845,7 @@ export default function WebAdminPortalScreen() {
                   styles.sidebarText,
                   activeMenu === 'customers' && styles.sidebarTextActive,
                 ]}
+                numberOfLines={1}
               >
                 Customers
               </Text>
@@ -852,7 +857,7 @@ export default function WebAdminPortalScreen() {
             >
               <Ionicons
                 name="sparkles-outline"
-                size={16}
+                size={15}
                 color={activeMenu === 'services' ? '#000000' : '#9CA3AF'}
               />
               <Text
@@ -860,6 +865,7 @@ export default function WebAdminPortalScreen() {
                   styles.sidebarText,
                   activeMenu === 'services' && styles.sidebarTextActive,
                 ]}
+                numberOfLines={1}
               >
                 Services
               </Text>
@@ -871,7 +877,7 @@ export default function WebAdminPortalScreen() {
             >
               <Ionicons
                 name="time-outline"
-                size={16}
+                size={15}
                 color={activeMenu === 'availability' ? '#000000' : '#9CA3AF'}
               />
               <Text
@@ -879,6 +885,7 @@ export default function WebAdminPortalScreen() {
                   styles.sidebarText,
                   activeMenu === 'availability' && styles.sidebarTextActive,
                 ]}
+                numberOfLines={1}
               >
                 Availability
               </Text>
@@ -890,7 +897,7 @@ export default function WebAdminPortalScreen() {
             >
               <Ionicons
                 name="phone-portrait-outline"
-                size={16}
+                size={15}
                 color={activeMenu === 'content' ? '#000000' : '#9CA3AF'}
               />
               <Text
@@ -898,6 +905,7 @@ export default function WebAdminPortalScreen() {
                   styles.sidebarText,
                   activeMenu === 'content' && styles.sidebarTextActive,
                 ]}
+                numberOfLines={1}
               >
                 App Content
               </Text>
@@ -912,7 +920,7 @@ export default function WebAdminPortalScreen() {
             >
               <Ionicons
                 name="bar-chart-outline"
-                size={16}
+                size={15}
                 color={activeMenu === 'reports' ? '#000000' : '#9CA3AF'}
               />
               <Text
@@ -920,6 +928,7 @@ export default function WebAdminPortalScreen() {
                   styles.sidebarText,
                   activeMenu === 'reports' && styles.sidebarTextActive,
                 ]}
+                numberOfLines={1}
               >
                 Reports
               </Text>
@@ -931,7 +940,7 @@ export default function WebAdminPortalScreen() {
             >
               <Ionicons
                 name="settings-outline"
-                size={16}
+                size={15}
                 color={activeMenu === 'settings' ? '#000000' : '#9CA3AF'}
               />
               <Text
@@ -939,6 +948,7 @@ export default function WebAdminPortalScreen() {
                   styles.sidebarText,
                   activeMenu === 'settings' && styles.sidebarTextActive,
                 ]}
+                numberOfLines={1}
               >
                 Settings
               </Text>
@@ -2549,14 +2559,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
 
-  // ── Sidebar (Medium-Sized Compact Width) ──
+  // ── Sidebar (Medium-Sized Compact Width: 136px) ──
   sidebar: {
-    width: 158,
+    width: 136,
+    minWidth: 136,
+    maxWidth: 136,
     backgroundColor: '#0E0E16',
     borderRightWidth: 1,
     borderRightColor: '#1A1A26',
     paddingVertical: 10,
-    paddingHorizontal: 6,
+    paddingHorizontal: 5,
   },
   sidebarHeaderRow: {
     flexDirection: 'row',
@@ -2567,7 +2579,7 @@ const styles = StyleSheet.create({
   },
   sidebarHeaderHeading: {
     color: '#6B7280',
-    fontSize: 9,
+    fontSize: 8.5,
     fontWeight: '900',
     letterSpacing: 0.8,
   },
@@ -2577,9 +2589,9 @@ const styles = StyleSheet.create({
   sidebarItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 8,
+    gap: 6,
+    paddingVertical: 7,
+    paddingHorizontal: 7,
     borderRadius: 6,
     marginBottom: 3,
   },
@@ -2588,7 +2600,7 @@ const styles = StyleSheet.create({
   },
   sidebarText: {
     color: '#9CA3AF',
-    fontSize: 12,
+    fontSize: 11.5,
     fontWeight: '700',
   },
   sidebarTextActive: {
@@ -2597,14 +2609,14 @@ const styles = StyleSheet.create({
   },
   newBadge: {
     backgroundColor: '#EF4444',
-    paddingHorizontal: 4,
-    paddingVertical: 1,
+    paddingHorizontal: 3.5,
+    paddingVertical: 0.5,
     borderRadius: 4,
     marginLeft: 'auto',
   },
   newBadgeText: {
     color: '#FFFFFF',
-    fontSize: 8,
+    fontSize: 7.5,
     fontWeight: '900',
   },
 
