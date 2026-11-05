@@ -4,6 +4,7 @@ import { Stack, useRouter, usePathname } from 'expo-router';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Updates from 'expo-updates';
 import { AppProvider } from '../src/context/AppContext';
 import { COLORS } from '../src/constants/theme';
 
@@ -127,6 +128,22 @@ export default function RootLayout() {
     const timer = setTimeout(() => {
       SplashScreen.hideAsync().catch(() => {});
     }, 150);
+
+    // Auto-check for published OTA updates on physical devices
+    async function checkForOtaUpdate() {
+      try {
+        if (!__DEV__ && Platform.OS !== 'web') {
+          const update = await Updates.checkForUpdateAsync();
+          if (update.isAvailable) {
+            await Updates.fetchUpdateAsync();
+            await Updates.reloadAsync();
+          }
+        }
+      } catch {
+        // Continue silently if offline or on web
+      }
+    }
+    checkForOtaUpdate();
 
     return () => clearTimeout(timer);
   }, []);
