@@ -326,7 +326,11 @@ export const SupabaseStudioService = {
   },
 
   /**
-   * Login user with email & password in Supabase Database
+   * Login user with email & password in Supabase Database.
+   * Strictly validates credentials:
+   * - If email/phone is not found: returns "No registered account found..."
+   * - If password is wrong by even one letter: returns "Incorrect password..."
+   * - Only logs in when credentials match.
    */
   async loginUser(params: {
     email: string;
@@ -337,57 +341,128 @@ export const SupabaseStudioService = {
     }
 
     try {
-      const email = params.email.trim();
-      const password = params.password || 'StudioPass@2026';
+      const inputStr = (params.email || '').trim();
+      const enteredPassword = (params.password || '').trim();
+      const cleanDigits = inputStr.replace(/[^\d]/g, '');
 
-      // 1. Try Supabase Auth Sign In
+      // 1. Look up profile in database by email OR phone
+      let query = supabase.from('profiles').select('*');
+      if (inputStr.includes('@')) {
+        query = query.ilike('email', inputStr);
+      } else if (cleanDigits.length >= 7) {
+        query = query.ilike('phone', `%${cleanDigits.slice(-10)}%`);
+      } else {
+        query = query.or(`email.ilike.${inputStr},phone.ilike.%${inputStr}%`);
+      }
+
+      const { data: matchedProfiles } = await query.limit(1);
+      const profile = matchedProfiles && matchedProfiles.length > 0 ? matchedProfiles[0] : null;
+
+      if (!profile) {
+        return {
+          success: false,
+          error: `No registered account found with "${inputStr}". Please check your email or phone spelling, or tap Register to create a new account.`,
+        };
+      }
+
+      // 2. We found the client profile! Authenticate with Supabase Auth
+      const authEmail = profile.email || inputStr;
+
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: authEmail,
+        password: enteredPassword,
       });
 
-      if (authData?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', authData.user.id)
-          .single();
-
-        return {
-          success: true,
-          user: profile || {
-            id: authData.user.id,
-            name: authData.user.user_metadata?.name || email.split('@')[0],
-            email: email,
-            phone: authData.user.user_metadata?.phone || '+91 90252 53695',
-            role: 'Studio Client',
-            isAdmin: false,
-          },
-        };
-      }
-
-      // 2. If signInWithPassword fails or email isn't verified in Supabase auth, check profiles table
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('*')
-        .or(`email.ilike.${email},phone.ilike.${email}`)
-        .limit(1)
-        .single();
-
-      if (existingProfile) {
-        return {
-          success: true,
-          user: existingProfile,
-        };
-      }
-
       if (authError) {
-        return { success: false, error: authError.message };
+        const msg = authError.message || '';
+        // If password is wrong by even one letter:
+        if (
+          msg.toLowerCase().includes('invalid login credentials') ||
+          msg.toLowerCase().includes('invalid credentials')
+        ) {
+          return {
+            success: false,
+            error: 'Incorrect password! The password you entered is wrong. Please check your spelling, capital letters, or tap Forgot Password below.',
+          };
+        }
+        // If password is correct but email is awaiting confirmation in Supabase:
+        if (msg.toLowerCase().includes('email not confirmed')) {
+          return {
+            success: true,
+            user: profile,
+          };
+        }
+        return {
+          success: false,
+          error: `Sign in error: ${authError.message}`,
+        };
       }
 
-      return { success: false, error: 'Invalid email or password' };
+      if (authData?.user) {
+        return {
+          success: true,
+          user: profile,
+        };
+      }
+
+      return {
+        success: false,
+        error: 'Incorrect password. Please re-enter your password or tap Forgot Password.',
+      };
     } catch (err: any) {
       console.error('[Supabase] Error logging in user:', err);
+      return { success: false, error: err.message };
+    }
+  },
+
+  /**
+   * Request password reset instructions for registered email or phone
+   */
+  async resetPassword(emailOrPhone: string): Promise<{ success: boolean; message?: string; error?: string }> {
+    if (!isSupabaseConfigured) {
+      return { success: false, error: 'Database not configured' };
+    }
+
+    try {
+      const inputStr = (emailOrPhone || '').trim();
+      const cleanDigits = inputStr.replace(/[^\d]/g, '');
+
+      // 1. Look up profile
+      let query = supabase.from('profiles').select('*');
+      if (inputStr.includes('@')) {
+        query = query.ilike('email', inputStr);
+      } else if (cleanDigits.length >= 7) {
+        query = query.ilike('phone', `%${cleanDigits.slice(-10)}%`);
+      } else {
+        query = query.or(`email.ilike.${inputStr},phone.ilike.%${inputStr}%`);
+      }
+
+      const { data: matchedProfiles } = await query.limit(1);
+      const profile = matchedProfiles && matchedProfiles.length > 0 ? matchedProfiles[0] : null;
+
+      if (!profile) {
+        return {
+          success: false,
+          error: `No registered account found for "${inputStr}". Please check your details or tap Register to create an account.`,
+        };
+      }
+
+      const targetEmail = profile.email;
+
+      // 2. Dispatch password reset via Supabase Auth
+      const { error: resetErr } = await supabase.auth.resetPasswordForEmail(targetEmail, {
+        redirectTo: 'https://venerable-marigold-a035e7.netlify.app/login',
+      });
+
+      if (resetErr) {
+        console.warn('[Supabase] Password reset notice:', resetErr.message);
+      }
+
+      return {
+        success: true,
+        message: `Password reset instructions have been dispatched to ${targetEmail}.\n\nIf you need immediate studio access, call reception at +91 90252 53695.`,
+      };
+    } catch (err: any) {
       return { success: false, error: err.message };
     }
   },

@@ -87,6 +87,7 @@ interface AppContextType {
   continueAsGuest: () => void;
   login: (params: { identifier: string; password?: string; device?: string; loginLocation?: string }) => Promise<{ success: boolean; error?: string }>;
   register: (params: { name: string; email: string; password?: string; phone?: string; device?: string; loginLocation?: string }) => Promise<{ success: boolean; error?: string }>;
+  resetPassword: (identifier: string) => Promise<{ success: boolean; message?: string; error?: string }>;
   loginDemo: (override?: Partial<UserProfile>) => void;
   logout: () => void;
   updateProfile: (updates: Partial<UserProfile>) => void;
@@ -242,6 +243,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (e: any) {
       return { success: false, error: e.message };
     }
+  };
+
+  // ── Forgot Password Request ──
+  const resetPassword = async (identifier: string) => {
+    return await StudioApi.resetPassword(identifier);
   };
 
   // ── Sync with Supabase Database (Account-Specific Only) ──
@@ -471,6 +477,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         continueAsGuest,
         login,
         register,
+        resetPassword,
         loginDemo,
         logout,
         updateProfile,

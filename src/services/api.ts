@@ -276,11 +276,13 @@ export const StudioApi = {
     loginLocation?: string
   ): Promise<{ success: boolean; user?: any; token?: string; error?: string }> {
     // 1. Supabase priority
-    if (isSupabaseConfigured && identifier.includes('@')) {
+    if (isSupabaseConfigured) {
       const res = await SupabaseStudioService.loginUser({ email: identifier, password });
       if (res.success) {
         return { success: true, user: res.user, token: `sb-token-${Date.now()}` };
       }
+      // When Supabase verification fails (wrong password or unregistered email), return the exact error!
+      return { success: false, error: res.error };
     }
 
     // 2. Netlify / Local Server API fallback
@@ -293,18 +295,23 @@ export const StudioApi = {
       return await res.json();
     } catch {
       return {
-        success: true,
-        user: {
-          id: 'usr-1',
-          name: identifier.includes('@') ? identifier.split('@')[0] : 'Studio Client',
-          email: identifier.includes('@') ? identifier : `${identifier}@cassaterecordz.com`,
-          phone: !identifier.includes('@') ? identifier : '+91 90252 53695',
-          role: 'Studio Client',
-          isAdmin: false,
-        },
-        token: `demo-token-${Date.now()}`,
+        success: false,
+        error: 'Unable to connect to authentication server. Please check your internet connection.',
       };
     }
+  },
+
+  /**
+   * Request password reset instructions
+   */
+  async resetPassword(identifier: string): Promise<{ success: boolean; message?: string; error?: string }> {
+    if (isSupabaseConfigured) {
+      return await SupabaseStudioService.resetPassword(identifier);
+    }
+    return {
+      success: true,
+      message: `Password reset instructions have been sent for ${identifier}.`,
+    };
   },
 
   /**

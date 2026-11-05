@@ -11,6 +11,7 @@ import {
   Platform,
   useWindowDimensions,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -28,7 +29,7 @@ export default function AuthScreen({ initialTab = 'login' }: AuthScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const { login, register, continueAsGuest } = useApp();
+  const { login, register, resetPassword, continueAsGuest } = useApp();
 
   const [activeTab, setActiveTab] = useState<'login' | 'register'>(initialTab);
 
@@ -41,6 +42,11 @@ export default function AuthScreen({ initialTab = 'login' }: AuthScreenProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Forgot Password Modal State
+  const [forgotModalVisible, setForgotModalVisible] = useState(false);
+  const [forgotIdentifier, setForgotIdentifier] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
 
   // Guest Mode Handler (Fresh Start Page with 0 passes)
   const handleContinueAsGuest = () => {
@@ -83,10 +89,37 @@ export default function AuthScreen({ initialTab = 'login' }: AuthScreenProps) {
     if (res.success) {
       router.replace('/(tabs)');
     } else {
-      Alert.alert(
-        'Sign In Failed',
-        res.error || 'Invalid credentials. If you are a new producer, please tap Register to create an account.'
-      );
+      const errMsg = res.error || '';
+      if (errMsg.toLowerCase().includes('password')) {
+        Alert.alert(
+          'Incorrect Password',
+          'The password you entered is wrong. Please check your spelling and capital letters, or tap "Forgot Password?" below to reset it.',
+          [
+            { text: 'Try Again', style: 'cancel' },
+            {
+              text: 'Forgot Password?',
+              onPress: () => {
+                setForgotIdentifier(identifier);
+                setForgotModalVisible(true);
+              },
+            },
+          ]
+        );
+      } else if (errMsg.toLowerCase().includes('no registered') || errMsg.toLowerCase().includes('not found')) {
+        Alert.alert(
+          'Account Not Found',
+          errMsg,
+          [
+            { text: 'Check Details', style: 'cancel' },
+            { text: 'Register Account', onPress: () => setActiveTab('register') },
+          ]
+        );
+      } else {
+        Alert.alert(
+          'Sign In Failed',
+          errMsg || 'Invalid credentials. If you are a new producer, please tap Register to create an account.'
+        );
+      }
     }
   };
 
@@ -163,11 +196,45 @@ export default function AuthScreen({ initialTab = 'login' }: AuthScreenProps) {
 
   // Forgot Password Handler
   const handleForgotPassword = () => {
-    Alert.alert(
-      'Password Reset',
-      'A secure verification code has been sent to your registered email/phone.',
-      [{ text: 'OK' }]
-    );
+    soundEffects.playClick(650, 0.04);
+    setForgotIdentifier(emailOrPhone.trim());
+    setForgotModalVisible(true);
+  };
+
+  const handleSendResetLink = async () => {
+    const target = forgotIdentifier.trim();
+    if (!target) {
+      Alert.alert('Details Required', 'Please enter your registered email address or mobile number.');
+      return;
+    }
+
+    setIsResetting(true);
+    const res = await resetPassword(target);
+    setIsResetting(false);
+
+    if (res.success) {
+      setForgotModalVisible(false);
+      Alert.alert(
+        'Password Reset Dispatched',
+        res.message || `Password reset instructions have been sent to your registered address for ${target}.`,
+        [{ text: 'OK' }]
+      );
+    } else {
+      Alert.alert(
+        'Reset Request Failed',
+        res.error || 'No registered account found matching that email or mobile number. Please check your spelling or register a new account.',
+        [
+          { text: 'Try Again', style: 'cancel' },
+          {
+            text: 'Register Account',
+            onPress: () => {
+              setForgotModalVisible(false);
+              setActiveTab('register');
+            },
+          },
+        ]
+      );
+    }
   };
 
   const isLogin = activeTab === 'login';
@@ -508,6 +575,79 @@ export default function AuthScreen({ initialTab = 'login' }: AuthScreenProps) {
         <View style={styles.bottomGoldGlowLeft} pointerEvents="none" />
         <View style={styles.bottomGoldGlowRight} pointerEvents="none" />
       </View>
+
+      {/* ── FORGOT PASSWORD MODAL ── */}
+      <Modal
+        visible={forgotModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setForgotModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeaderIcon}>
+              <Ionicons name="key" size={26} color="#000000" />
+            </View>
+
+            <Text style={styles.modalTitle}>Forgot Password?</Text>
+            <Text style={styles.modalSubtitle}>
+              Enter your registered Email or Mobile number. We will check your client credentials and send password reset instructions.
+            </Text>
+
+            <View style={[styles.inputPill, { marginTop: 16, marginBottom: 12, width: '100%' }]}>
+              <Ionicons name="mail-outline" size={18} color="#CBD5E1" />
+              <TextInput
+                style={styles.textInput}
+                placeholder="Enter Email or Mobile"
+                placeholderTextColor="#64748B"
+                value={forgotIdentifier}
+                onChangeText={setForgotIdentifier}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoFocus
+              />
+            </View>
+
+            <TouchableOpacity
+              style={[styles.submitBtn, { marginTop: 4, width: '100%' }, isResetting && { opacity: 0.7 }]}
+              onPress={handleSendResetLink}
+              disabled={isResetting}
+              activeOpacity={0.85}
+            >
+              <LinearGradient
+                colors={['#FACC15', '#EAB308', '#CA8A04']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.submitGradient}
+              >
+                {isResetting ? (
+                  <ActivityIndicator size="small" color="#000000" />
+                ) : (
+                  <Text style={styles.submitBtnText}>Send Reset Instructions</Text>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.modalCloseBtn}
+              onPress={() => setForgotModalVisible(false)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.modalCloseText}>Cancel</Text>
+            </TouchableOpacity>
+
+            <View style={styles.modalHotlineRow}>
+              <Ionicons name="call-outline" size={13} color="#94A3B8" />
+              <Text style={styles.modalHotlineText}>
+                Need instant access? Call Studio: <Text style={{ color: '#FACC15' }}>+91 90252 53695</Text>
+              </Text>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -854,5 +994,78 @@ const styles = StyleSheet.create({
     height: 140,
     borderRadius: 70,
     backgroundColor: 'rgba(234, 179, 8, 0.12)',
+  },
+
+  // ── Forgot Password Modal Styles ──
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.82)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 380,
+    backgroundColor: '#0F172A',
+    borderRadius: 22,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: '#334155',
+    alignItems: 'center',
+    shadowColor: '#FACC15',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 14,
+    elevation: 10,
+  },
+  modalHeaderIcon: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: '#FACC15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    fontSize: 12,
+    color: '#94A3B8',
+    textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 4,
+  },
+  modalCloseBtn: {
+    marginTop: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  modalCloseText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#94A3B8',
+  },
+  modalHotlineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 14,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#1E293B',
+    width: '100%',
+    justifyContent: 'center',
+  },
+  modalHotlineText: {
+    fontSize: 11,
+    color: '#94A3B8',
+    fontWeight: '500',
   },
 });
