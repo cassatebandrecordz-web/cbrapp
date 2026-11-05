@@ -869,7 +869,7 @@ export default function SlotBookingScreen() {
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.disclaimerCardTitle}>
-                      DISCLAIMER – CASSATE BAND RECORDZ
+                      DISCLAIMER – CBR STUDIO
                     </Text>
                     <Text style={styles.disclaimerCardSub}>
                       By using our services, you agree to the following:
@@ -894,7 +894,7 @@ export default function SlotBookingScreen() {
 
                 {/* Studio Branding */}
                 <View style={styles.disclaimerBrandFooter}>
-                  <Text style={styles.disclaimerBrandTitle}>CASSATE BAND RECORDZ</Text>
+                  <Text style={styles.disclaimerBrandTitle}>CBR STUDIO</Text>
                   <Text style={styles.disclaimerBrandTagline}>Your Ideas, We've Done It.</Text>
                 </View>
 
@@ -925,7 +925,7 @@ export default function SlotBookingScreen() {
                   <Text style={styles.disclaimerCheckboxLabel}>
                     I have read and agree to the{' '}
                     <Text style={styles.disclaimerCheckboxLabelBold}>
-                      CASSATE BAND RECORDZ Studio Terms & Disclaimer
+                      CBR Studio Terms & Disclaimer
                     </Text>
                   </Text>
                 </TouchableOpacity>

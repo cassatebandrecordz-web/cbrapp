@@ -20,7 +20,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  title = 'CASSATE BAND RECORDZ',
+  title = 'CBR Studio',
   subtitle,
   showBack = false,
   onBack,

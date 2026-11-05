@@ -58,11 +58,11 @@ export default function BookingConfirmationScreen() {
       const startIso = `${year}${pad(month)}${pad(day)}T${pad(startHour)}${pad(startMin)}00`;
       const endIso = `${year}${pad(month)}${pad(day)}T${pad(endHour)}${pad(startMin)}00`;
 
-      const title = encodeURIComponent(`Cassate Band Recordz - ${serviceName}`);
+      const title = encodeURIComponent(`CBR Studio - ${serviceName}`);
       const details = encodeURIComponent(
-        `Studio Reservation Pass\nService: ${serviceName}\nReference Code: ${refCode}\nRoom: ${studioName}\nReserved Time: ${timeStr}\n\nClient: ${booking?.clientName || 'Studio Client'}\nPhone: +91 90252 53695\nCassate Band Recordz Post Production Studio`
+        `Studio Reservation Pass\nService: ${serviceName}\nReference Code: ${refCode}\nRoom: ${studioName}\nReserved Time: ${timeStr}\n\nClient: ${booking?.clientName || 'Studio Client'}\nPhone: +91 90252 53695\nCBR Studio Post Production, Chennai`
       );
-      const location = encodeURIComponent('Cassate Band Recordz Post Production Studio, Chennai');
+      const location = encodeURIComponent('CBR Studio Post Production, Chennai');
 
       const gCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startIso}/${endIso}&details=${details}&location=${location}`;
 
@@ -123,7 +123,7 @@ export default function BookingConfirmationScreen() {
           {/* Top Pass Bar */}
           <View style={styles.passHeader}>
             <View>
-              <Text style={styles.passBrand}>CASSATE BAND RECORDZ</Text>
+              <Text style={styles.passBrand}>CBR STUDIO</Text>
               <Text style={styles.passSubtitle}>STUDIO ACCESS PASS</Text>
             </View>
             <View style={styles.confirmedBadge}>

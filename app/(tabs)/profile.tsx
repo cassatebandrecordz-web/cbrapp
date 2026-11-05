@@ -96,7 +96,7 @@ export default function ProfileScreen() {
 
         <View style={styles.headerTitleBox}>
           <Text style={styles.headerTitle}>Studio Client Profile</Text>
-          <Text style={styles.headerSubtitle}>CASSATE BAND RECORDZ</Text>
+          <Text style={styles.headerSubtitle}>CBR STUDIO</Text>
         </View>
 
         <View style={styles.headerRightSpacer} />
@@ -333,7 +333,7 @@ export default function ProfileScreen() {
 
           {/* ── 6. App Info Footer ── */}
           <View style={styles.footerInfo}>
-            <Text style={styles.footerBrand}>CASSATE BAND RECORDZ</Text>
+            <Text style={styles.footerBrand}>CBR STUDIO</Text>
             <Text style={styles.footerTagline}>Your Ideas, We've Done It.</Text>
             <Text style={styles.footerVersion}>Mobile Production Client v1.0 • Studio Suite</Text>
           </View>

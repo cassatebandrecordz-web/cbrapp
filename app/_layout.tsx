@@ -164,44 +164,44 @@ export default function RootLayout() {
                 screenOptions={{
                   headerShown: false,
                   contentStyle: { backgroundColor: isAdminScreen ? '#0A0A0F' : '#FBFCF8' },
-                  animation: 'slide_from_right',
-                  animationDuration: 280,
+                  animation: 'fade',
+                  animationDuration: 220,
                 }}
               >
                 {/* Initial Screen: Get Started */}
                 <Stack.Screen name="index" options={{ animation: 'none' }} />
 
                 {/* Auth / Onboarding */}
-                <Stack.Screen name="welcome" options={{ animation: 'none' }} />
-                <Stack.Screen name="login" options={{ animation: 'slide_from_bottom', animationDuration: 280 }} />
-                <Stack.Screen name="register" options={{ animation: 'slide_from_right', animationDuration: 280 }} />
+                <Stack.Screen name="welcome" options={{ animation: 'fade', animationDuration: 220 }} />
+                <Stack.Screen name="login" options={{ animation: 'fade', animationDuration: 220 }} />
+                <Stack.Screen name="register" options={{ animation: 'fade', animationDuration: 220 }} />
 
                 {/* Bottom Tabs */}
-                <Stack.Screen name="(tabs)" options={{ animation: 'fade', animationDuration: 250 }} />
+                <Stack.Screen name="(tabs)" options={{ animation: 'fade', animationDuration: 220 }} />
 
                 {/* Service Details & Pricing */}
-                <Stack.Screen name="services/[id]" options={{ animation: 'slide_from_right' }} />
+                <Stack.Screen name="services/[id]" options={{ animation: 'fade', animationDuration: 220 }} />
 
                 {/* Slot Booking Screen */}
-                <Stack.Screen name="booking/select" options={{ animation: 'slide_from_right' }} />
+                <Stack.Screen name="booking/select" options={{ animation: 'fade', animationDuration: 220 }} />
 
                 {/* Booking Confirmation & My Bookings */}
-                <Stack.Screen name="booking/confirmation" options={{ gestureEnabled: false, animation: 'fade_from_bottom' }} />
-                <Stack.Screen name="my-bookings" options={{ animation: 'slide_from_right' }} />
+                <Stack.Screen name="booking/confirmation" options={{ gestureEnabled: false, animation: 'fade', animationDuration: 220 }} />
+                <Stack.Screen name="my-bookings" options={{ animation: 'fade', animationDuration: 220 }} />
 
                 {/* Projects Drill-downs */}
-                <Stack.Screen name="projects/[id]" options={{ animation: 'slide_from_right' }} />
-                <Stack.Screen name="projects/[id]/editor" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-                <Stack.Screen name="projects/[id]/draft" options={{ animation: 'slide_from_right' }} />
-                <Stack.Screen name="projects/[id]/revision" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-                <Stack.Screen name="projects/[id]/delivery" options={{ animation: 'slide_from_right' }} />
+                <Stack.Screen name="projects/[id]" options={{ animation: 'fade', animationDuration: 220 }} />
+                <Stack.Screen name="projects/[id]/editor" options={{ presentation: 'modal', animation: 'fade', animationDuration: 220 }} />
+                <Stack.Screen name="projects/[id]/draft" options={{ animation: 'fade', animationDuration: 220 }} />
+                <Stack.Screen name="projects/[id]/revision" options={{ presentation: 'modal', animation: 'fade', animationDuration: 220 }} />
+                <Stack.Screen name="projects/[id]/delivery" options={{ animation: 'fade', animationDuration: 220 }} />
 
                 {/* General Utility Screens */}
-                <Stack.Screen name="notifications" options={{ animation: 'slide_from_right' }} />
-                <Stack.Screen name="contact" options={{ animation: 'slide_from_right' }} />
+                <Stack.Screen name="notifications" options={{ animation: 'fade', animationDuration: 220 }} />
+                <Stack.Screen name="contact" options={{ animation: 'fade', animationDuration: 220 }} />
 
                 {/* Admin Web Portal */}
-                <Stack.Screen name="admin-web" options={{ animation: 'fade' }} />
+                <Stack.Screen name="admin-web" options={{ animation: 'fade', animationDuration: 220 }} />
               </Stack>
             </View>
           </View>

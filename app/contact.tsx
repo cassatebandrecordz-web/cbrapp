@@ -217,7 +217,7 @@ export default function ContactStudioScreen() {
               <Ionicons name="business" size={18} color="#CA8A04" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.addressTitle}>CASSATE BAND RECORDZ</Text>
+              <Text style={styles.addressTitle}>CBR STUDIO</Text>
               <Text style={styles.addressLinePrimary}>Annai Illam, 104, Krishna St,</Text>
               <Text style={styles.addressLineSecondary}>Palaniappa Nagar, Chennai,</Text>
               <Text style={styles.addressLineSecondary}>Tamil Nadu 600087</Text>

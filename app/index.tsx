@@ -9,6 +9,7 @@ import {
   PanResponder,
   useWindowDimensions,
   TouchableOpacity,
+  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -18,80 +19,69 @@ export default function InitialEntranceScreen() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
 
-  // State to clean up intro animation layer after smooth fade-out
-  const [loadingComplete, setLoadingComplete] = useState<boolean>(false);
+  // Clean up intro animation layer after fade-out
+  const [introComplete, setIntroComplete] = useState<boolean>(false);
 
-  // Cinematic Intro Animation Values
-  const loadingFadeAnim = useRef(new Animated.Value(1)).current;
-  const loadingScaleAnim = useRef(new Animated.Value(1)).current;
-  const pulseRingAnim = useRef(new Animated.Value(0.4)).current;
+  // ── Cinematic Animated Logo Opening Values ──
+  const introFadeAnim = useRef(new Animated.Value(1)).current;
+  const introScaleAnim = useRef(new Animated.Value(1)).current;
+
+  // Logo Scale & Pulse Animations (useNativeDriver: true)
+  const logoScaleAnim = useRef(new Animated.Value(0.7)).current;
+  const logoPulseAnim = useRef(new Animated.Value(1)).current;
   const pulseRingScaleAnim = useRef(new Animated.Value(0.85)).current;
-
-  // 7-Bar Golden Equalizer Animation Values
-  const barHeights = useRef([
-    new Animated.Value(14),
-    new Animated.Value(24),
-    new Animated.Value(12),
-    new Animated.Value(34),
-    new Animated.Value(18),
-    new Animated.Value(28),
-    new Animated.Value(16),
-  ]).current;
+  const pulseRingOpacityAnim = useRef(new Animated.Value(0.35)).current;
 
   // Poster transition values
   const posterFadeAnim = useRef(new Animated.Value(1)).current;
 
-  // Interactive Clapperboard Slider Values
+  // Interactive Slider values
   const swipePan = useRef(new Animated.Value(0)).current;
+  const buttonPressScale = useRef(new Animated.Value(1)).current;
+  const chevronPulseAnim = useRef(new Animated.Value(0.35)).current;
   const isEnteringRef = useRef(false);
 
-  // Chevron breathing pulse
-  const chevronPulseAnim = useRef(new Animated.Value(0.35)).current;
-
-  // Slider layout dimensions
-  const [measuredTrackWidth, setMeasuredTrackWidth] = useState<number>(0);
-  const trackWidth = measuredTrackWidth || Math.min(300, Math.round(width * 0.74));
+  // Dynamic track width and drag distance calculation
+  const trackWidth = Math.min(310, Math.round(width * 0.76));
   const thumbWidth = 56;
-  const maxDrag = Math.max(70, trackWidth - thumbWidth - 10);
+  const maxDrag = Math.max(80, trackWidth - thumbWidth - 10);
+  const maxDragRef = useRef(maxDrag);
+  maxDragRef.current = maxDrag;
 
   useEffect(() => {
-    // 1. Equalizer Bars Rhythmic Studio Animation
-    const animateBar = (val: Animated.Value, minH: number, maxH: number, dur: number) => {
-      return Animated.loop(
-        Animated.sequence([
-          Animated.timing(val, { toValue: maxH, duration: dur, useNativeDriver: false }),
-          Animated.timing(val, { toValue: minH, duration: dur * 0.85, useNativeDriver: false }),
-        ])
-      );
-    };
+    // 1. Logo Scale-in on Open
+    Animated.spring(logoScaleAnim, {
+      toValue: 1,
+      friction: 6,
+      tension: 65,
+      useNativeDriver: true,
+    }).start();
 
-    const loops = [
-      animateBar(barHeights[0], 10, 28, 380),
-      animateBar(barHeights[1], 16, 44, 460),
-      animateBar(barHeights[2], 12, 32, 340),
-      animateBar(barHeights[3], 20, 52, 520),
-      animateBar(barHeights[4], 14, 38, 410),
-      animateBar(barHeights[5], 18, 46, 470),
-      animateBar(barHeights[6], 10, 26, 360),
-    ];
-    loops.forEach((l) => l.start());
+    // 2. Continuous Golden Breathing Pulse on Logo
+    const logoPulseLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(logoPulseAnim, { toValue: 1.05, duration: 750, useNativeDriver: true }),
+        Animated.timing(logoPulseAnim, { toValue: 1.0, duration: 750, useNativeDriver: true }),
+      ])
+    );
+    logoPulseLoop.start();
 
-    // 2. Golden Sonic Pulse Rings
-    const pulseLoop = Animated.loop(
+    // 3. Glowing Sonic Aura Rings expanding from behind the logo
+    const ringLoop = Animated.loop(
       Animated.parallel([
         Animated.sequence([
-          Animated.timing(pulseRingAnim, { toValue: 0.9, duration: 650, useNativeDriver: true }),
-          Animated.timing(pulseRingAnim, { toValue: 0.25, duration: 650, useNativeDriver: true }),
+          Animated.timing(pulseRingOpacityAnim, { toValue: 0.85, duration: 650, useNativeDriver: true }),
+          Animated.timing(pulseRingOpacityAnim, { toValue: 0.2, duration: 650, useNativeDriver: true }),
         ]),
         Animated.sequence([
-          Animated.timing(pulseRingScaleAnim, { toValue: 1.15, duration: 650, useNativeDriver: true }),
-          Animated.timing(pulseRingScaleAnim, { toValue: 0.9, duration: 650, useNativeDriver: true }),
+          Animated.timing(pulseRingScaleAnim, { toValue: 1.25, duration: 650, useNativeDriver: true }),
+          Animated.timing(pulseRingScaleAnim, { toValue: 0.85, duration: 650, useNativeDriver: true }),
         ]),
       ])
     );
-    pulseLoop.start();
+    ringLoop.start();
 
-    // 3. Chevron Breathing in Slider
+    // 4. Chevrons Breathing in Get Started Slider
     const chevronLoop = Animated.loop(
       Animated.sequence([
         Animated.timing(chevronPulseAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
@@ -100,33 +90,33 @@ export default function InitialEntranceScreen() {
     );
     chevronLoop.start();
 
-    // 4. Smooth auto-transition into Poster Screen (1.1s duration, zero black logo)
+    // 5. Smooth auto-transition into Poster Screen after 1.25s
     const timer = setTimeout(() => {
       dissolveIntro();
-    }, 1150);
+    }, 1250);
 
     return () => {
       clearTimeout(timer);
-      loops.forEach((l) => l.stop());
-      pulseLoop.stop();
+      logoPulseLoop.stop();
+      ringLoop.stop();
       chevronLoop.stop();
     };
   }, []);
 
   const dissolveIntro = () => {
     Animated.parallel([
-      Animated.timing(loadingFadeAnim, {
+      Animated.timing(introFadeAnim, {
         toValue: 0,
-        duration: 320,
+        duration: 280,
         useNativeDriver: true,
       }),
-      Animated.timing(loadingScaleAnim, {
-        toValue: 1.05,
-        duration: 320,
+      Animated.timing(introScaleAnim, {
+        toValue: 1.04,
+        duration: 280,
         useNativeDriver: true,
       }),
     ]).start(() => {
-      setLoadingComplete(true);
+      setIntroComplete(true);
     });
   };
 
@@ -135,11 +125,13 @@ export default function InitialEntranceScreen() {
     if (isEnteringRef.current) return;
     isEnteringRef.current = true;
 
+    // Slide clapperboard thumb smoothly to arrow end
     Animated.timing(swipePan, {
-      toValue: maxDrag,
+      toValue: maxDragRef.current,
       duration: 180,
       useNativeDriver: true,
     }).start(() => {
+      // Fade out entrance screen and route to /login
       Animated.timing(posterFadeAnim, {
         toValue: 0,
         duration: 180,
@@ -150,28 +142,37 @@ export default function InitialEntranceScreen() {
     });
   };
 
-  // Bulletproof PanResponder attached to the entire interactive slider
+  // Bulletproof PanResponder attached to the interactive slider
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onStartShouldSetPanResponderCapture: () => true,
-      onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dx) > 2,
-      onMoveShouldSetPanResponderCapture: (_, gestureState) => Math.abs(gestureState.dx) > 2,
+      onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dx) > 3,
+      onMoveShouldSetPanResponderCapture: (_, gestureState) => Math.abs(gestureState.dx) > 3,
       onPanResponderTerminationRequest: () => false,
       onPanResponderGrant: () => {
-        // Instant visual acknowledgment
+        Animated.spring(buttonPressScale, {
+          toValue: 0.98,
+          useNativeDriver: true,
+        }).start();
       },
       onPanResponderMove: (_, gestureState) => {
         if (isEnteringRef.current) return;
-        const newX = Math.min(maxDrag, Math.max(0, gestureState.dx));
+        const limit = maxDragRef.current;
+        const newX = Math.min(limit, Math.max(0, gestureState.dx));
         swipePan.setValue(newX);
       },
       onPanResponderRelease: (_, gestureState) => {
+        Animated.spring(buttonPressScale, {
+          toValue: 1,
+          useNativeDriver: true,
+        }).start();
+
         if (isEnteringRef.current) return;
 
-        // User tapped the slider OR slid > 25% of track OR flicked fast to the right
+        // User tapped the button (dx < 10) OR slid > 25% of track OR flicked fast to the right
         const isTap = Math.abs(gestureState.dx) < 10 && Math.abs(gestureState.dy) < 10;
-        const isSlide = gestureState.dx > maxDrag * 0.28 || gestureState.vx > 0.45;
+        const isSlide = gestureState.dx > maxDragRef.current * 0.25 || gestureState.vx > 0.4;
 
         if (isTap || isSlide) {
           handleEnterHome();
@@ -186,6 +187,11 @@ export default function InitialEntranceScreen() {
         }
       },
       onPanResponderTerminate: () => {
+        Animated.spring(buttonPressScale, {
+          toValue: 1,
+          useNativeDriver: true,
+        }).start();
+
         if (!isEnteringRef.current) {
           Animated.spring(swipePan, {
             toValue: 0,
@@ -198,7 +204,7 @@ export default function InitialEntranceScreen() {
     })
   ).current;
 
-  // Text fades out smoothly as thumb slides across
+  // Text fades out as thumb slides across
   const labelOpacity = swipePan.interpolate({
     inputRange: [0, Math.max(1, maxDrag * 0.45), maxDrag],
     outputRange: [1, 0.2, 0],
@@ -221,22 +227,25 @@ export default function InitialEntranceScreen() {
           style={styles.posterBg}
           resizeMode="cover"
         >
-          {/* ── NATIVE INTERACTIVE CLAPPERBOARD SLIDER ── */}
-          {/* Positioned precisely at 71.1% of height where the button sits in the banner */}
-          <View
+          {/* Full-screen tap surface outside the slider for instant access */}
+          <TouchableOpacity
+            style={StyleSheet.absoluteFillObject}
+            onPress={handleEnterHome}
+            activeOpacity={1}
+          />
+
+          {/* ── INTERACTIVE GET STARTED SLIDER & BUTTON ── */}
+          {/* Solid capsule perfectly centered at 71.1% of height over banner button */}
+          <Animated.View
             style={[
               styles.sliderHotspot,
-              { width: trackWidth },
+              {
+                width: trackWidth,
+                transform: [{ translateY: -29 }, { scale: buttonPressScale }],
+              },
             ]}
-            onLayout={(e) => {
-              const w = e.nativeEvent.layout.width;
-              if (w > 120 && w !== measuredTrackWidth) {
-                setMeasuredTrackWidth(w);
-              }
-            }}
             {...panResponder.panHandlers}
           >
-            {/* Glowing Golden Capsule Track */}
             <View style={styles.sliderCapsuleTrack}>
               {/* Background Text & Pulsing Chevrons */}
               <Animated.View style={[styles.sliderLabelRow, { opacity: labelOpacity }]}>
@@ -274,60 +283,57 @@ export default function InitialEntranceScreen() {
                 />
               </Animated.View>
             </View>
-          </View>
+          </Animated.View>
         </ImageBackground>
       </Animated.View>
 
-      {/* ── PHASE 1: CINEMATIC STUDIO INTRO ANIMATION (Replaces Black Logo) ── */}
-      {!loadingComplete && (
+      {/* ── PHASE 1: ANIMATED STUDIO LOGO ON OPEN (Replaces Black Logo) ── */}
+      {!introComplete && (
         <Animated.View
           style={[
             styles.introContainer,
             {
-              opacity: loadingFadeAnim,
-              transform: [{ scale: loadingScaleAnim }],
+              opacity: introFadeAnim,
+              transform: [{ scale: introScaleAnim }],
             },
           ]}
-          pointerEvents={loadingComplete ? 'none' : 'auto'}
+          pointerEvents={introComplete ? 'none' : 'auto'}
         >
           <TouchableOpacity
             style={styles.introContent}
             onPress={dissolveIntro}
             activeOpacity={0.98}
           >
-            {/* Pulsing Concentric Golden Glow Rings */}
-            <View style={styles.visualizerGlowAnchor}>
+            {/* Glowing Golden Sonic Rings behind the Logo */}
+            <View style={styles.logoAnchor}>
               <Animated.View
                 style={[
                   styles.sonicPulseRingOuter,
                   {
-                    opacity: pulseRingAnim,
+                    opacity: pulseRingOpacityAnim,
                     transform: [{ scale: pulseRingScaleAnim }],
                   },
                 ]}
               />
               <View style={styles.sonicPulseRingInner} />
 
-              {/* 7-Bar Golden Equalizer Waves */}
-              <View style={styles.equalizerRow}>
-                {barHeights.map((hAnim, idx) => (
-                  <Animated.View
-                    key={idx}
-                    style={[
-                      styles.equalizerBar,
-                      {
-                        height: hAnim,
-                        backgroundColor:
-                          idx === 3
-                            ? '#FEF08A'
-                            : idx === 1 || idx === 5
-                            ? '#FACC15'
-                            : '#EAB308',
-                      },
-                    ]}
-                  />
-                ))}
-              </View>
+              {/* ── ANIMATED GOLDEN STUDIO EMBLEM ── */}
+              <Animated.View
+                style={[
+                  styles.logoEmblemContainer,
+                  {
+                    transform: [
+                      { scale: Animated.multiply(logoScaleAnim, logoPulseAnim) },
+                    ],
+                  },
+                ]}
+              >
+                <Image
+                  source={require('../assets/icon.png')}
+                  style={styles.logoEmblemImage}
+                  resizeMode="contain"
+                />
+              </Animated.View>
             </View>
 
             {/* Glowing Studio Typography */}
@@ -335,7 +341,7 @@ export default function InitialEntranceScreen() {
 
             <View style={styles.introDividerRow}>
               <View style={styles.introDividerLine} />
-              <Ionicons name="mic" size={12} color="#FACC15" />
+              <Ionicons name="mic" size={13} color="#FACC15" />
               <View style={styles.introDividerLine} />
             </View>
 
@@ -361,7 +367,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 
-  // ── Phase 1: Cinematic Studio Intro Styles (Obsidian & Gold) ──
+  // ── Phase 1: Animated Logo Opening Styles (Obsidian & Gold) ──
   introContainer: {
     position: 'absolute',
     top: 0,
@@ -379,51 +385,56 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingHorizontal: 20,
   },
-  visualizerGlowAnchor: {
-    width: 140,
-    height: 140,
+  logoAnchor: {
+    width: 170,
+    height: 170,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   sonicPulseRingOuter: {
     position: 'absolute',
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    borderWidth: 1.5,
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    borderWidth: 2,
     borderColor: 'rgba(250, 204, 21, 0.45)',
-    backgroundColor: 'rgba(250, 204, 21, 0.05)',
+    backgroundColor: 'rgba(250, 204, 21, 0.06)',
   },
   sonicPulseRingInner: {
     position: 'absolute',
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     backgroundColor: 'rgba(234, 179, 8, 0.12)',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: 'rgba(250, 204, 21, 0.35)',
   },
-  equalizerRow: {
-    flexDirection: 'row',
+  logoEmblemContainer: {
+    width: 110,
+    height: 110,
+    borderRadius: 24,
+    backgroundColor: '#12121A',
+    borderWidth: 2,
+    borderColor: '#FACC15',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    height: 60,
-  },
-  equalizerBar: {
-    width: 6,
-    borderRadius: 3,
     shadowColor: '#FACC15',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 6,
-    elevation: 4,
+    shadowOpacity: 0.9,
+    shadowRadius: 18,
+    elevation: 14,
+    overflow: 'hidden',
+  },
+  logoEmblemImage: {
+    width: 104,
+    height: 104,
+    borderRadius: 20,
   },
   introTitle: {
     color: '#FACC15',
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: '900',
     letterSpacing: 3,
     textShadowColor: 'rgba(250, 204, 21, 0.65)',
@@ -438,7 +449,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   introDividerLine: {
-    width: 36,
+    width: 40,
     height: 1,
     backgroundColor: 'rgba(250, 204, 21, 0.4)',
   },
@@ -457,7 +468,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(250, 204, 21, 0.3)',
     paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderRadius: 14,
   },
   greenLiveDot: {
@@ -496,17 +507,16 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: '71.1%',
     alignSelf: 'center',
-    height: 56,
-    marginTop: -28, // Perfectly centers 56px height at 71.1%
+    height: 58,
     zIndex: 30,
     elevation: 16,
     maxWidth: 320,
   },
   sliderCapsuleTrack: {
     width: '100%',
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#121008',
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: '#141208',
     borderWidth: 2,
     borderColor: '#FACC15',
     flexDirection: 'row',
@@ -516,8 +526,8 @@ const styles = StyleSheet.create({
     shadowColor: '#FACC15',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.9,
-    shadowRadius: 10,
-    elevation: 12,
+    shadowRadius: 12,
+    elevation: 14,
   },
   sliderLabelRow: {
     position: 'absolute',
@@ -537,9 +547,9 @@ const styles = StyleSheet.create({
   sliderArrowEndBadge: {
     position: 'absolute',
     right: 5,
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#FACC15',
     alignItems: 'center',
     justifyContent: 'center',

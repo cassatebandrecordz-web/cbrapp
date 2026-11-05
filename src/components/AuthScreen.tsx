@@ -172,7 +172,7 @@ export default function AuthScreen({ initialTab = 'login' }: AuthScreenProps) {
     if (res.success) {
       Alert.alert(
         'Account Registered!',
-        `Welcome to Cassate Band Recordz, ${trimmedName}! Your studio account is active and ready.`,
+        `Welcome to CBR Studio, ${trimmedName}! Your studio account is active and ready.`,
         [{ text: 'Continue to Studio', onPress: () => router.replace('/(tabs)') }]
       );
     } else {
@@ -357,7 +357,7 @@ export default function AuthScreen({ initialTab = 'login' }: AuthScreenProps) {
             <Text style={styles.subHeading}>
               {isLogin
                 ? 'Access your bookings, projects and studio services'
-                : 'Join Cassate Band Recordz for studio bookings'}
+                : 'Join CBR Studio for studio bookings'}
             </Text>
           </View>
 
@@ -554,7 +554,7 @@ export default function AuthScreen({ initialTab = 'login' }: AuthScreenProps) {
             <View style={styles.footerSection}>
               <Text style={styles.footerPrompt}>
                 {isLogin
-                  ? 'New to Cassate Band Recordz?'
+                  ? 'New to CBR Studio?'
                   : 'Already have an account?'}
               </Text>
               <TouchableOpacity
