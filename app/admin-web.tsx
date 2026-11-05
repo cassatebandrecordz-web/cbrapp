@@ -341,8 +341,8 @@ export default function WebAdminPortalScreen() {
   const insets = useSafeAreaInsets();
   const { bookings: liveAppContextBookings } = useApp();
 
-  // ── Layout & View State ──
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  // ── Layout & View State (Sidebar Always Hidden by Default) ──
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeMenu, setActiveMenu] = useState<
     'dashboard' | 'bookings' | 'projects' | 'payments' | 'customers' | 'services' | 'availability' | 'content' | 'reports' | 'settings'
   >('dashboard');
