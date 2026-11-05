@@ -132,7 +132,7 @@ export default function AuthScreen({ initialTab = 'login' }: AuthScreenProps) {
     if (res.success) {
       Alert.alert(
         'Account Registered!',
-        `Welcome to Cassate Band Recordz, ${trimmedName}! Your studio account is active in the database.`,
+        `Welcome to Cassate Band Recordz, ${trimmedName}! Your studio account is active and ready.`,
         [{ text: 'Continue to Studio', onPress: () => router.replace('/(tabs)') }]
       );
     } else {
@@ -391,7 +391,9 @@ export default function AuthScreen({ initialTab = 'login' }: AuthScreenProps) {
                 {isSubmitting ? (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <ActivityIndicator size="small" color="#000000" />
-                    <Text style={styles.submitBtnText}>Connecting to Database...</Text>
+                    <Text style={styles.submitBtnText}>
+                      {isLogin ? 'Sign In Loading...' : 'Registering...'}
+                    </Text>
                   </View>
                 ) : (
                   <>
