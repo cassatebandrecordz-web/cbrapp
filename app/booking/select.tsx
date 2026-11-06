@@ -547,7 +547,7 @@ export default function SlotBookingScreen() {
                   <View style={styles.selectedDateBadge}>
                     <Ionicons name="today-outline" size={12} color="#B45309" />
                     <Text style={styles.selectedDateBadgeText} numberOfLines={1}>
-                      {selectedDayObj.fullDate}
+                      {selectedDayObj.dayName}, {selectedDayObj.shortLabel}
                     </Text>
                   </View>
                 </View>
@@ -563,12 +563,8 @@ export default function SlotBookingScreen() {
                 </View>
               </View>
 
-              {/* Horizontal Monday-to-Saturday Day Pill Strip */}
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.sevenDaysContainer}
-              >
+              {/* Responsive Monday-to-Saturday Day Strip (Cleanly Aligned Edge-to-Edge) */}
+              <View style={styles.sevenDaysContainer}>
                 {workingDays.map((day) => {
                   const isSelected = selectedDayId === day.id;
                   const isPast = day.isPast;
@@ -627,7 +623,7 @@ export default function SlotBookingScreen() {
                     </TouchableOpacity>
                   );
                 })}
-              </ScrollView>
+              </View>
 
               {/* Time Slots Section Header with Legend */}
               <View style={styles.slotsHeaderContainer}>
@@ -1363,7 +1359,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#FDE68A',
-    flexShrink: 1,
+    flexShrink: 0,
+    alignSelf: 'center',
   },
   selectedDateBadgeText: {
     fontSize: 11,
@@ -1374,17 +1371,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 6,
-    paddingVertical: 6,
-    paddingRight: 8,
+    width: '100%',
+    gap: 4,
+    paddingVertical: 4,
     marginBottom: 14,
-    minWidth: '100%',
   },
   dayCard: {
     flex: 1,
-    minWidth: 46,
-    maxWidth: 58,
     paddingVertical: 9,
+    paddingHorizontal: 1,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#FAFBF6',

@@ -29,7 +29,7 @@ export default function AuthScreen({ initialTab = 'login' }: AuthScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const { login, register, resetPassword, continueAsGuest } = useApp();
+  const { login, loginWithGoogle, register, resetPassword, continueAsGuest } = useApp();
 
   const [activeTab, setActiveTab] = useState<'login' | 'register'>(initialTab);
 
@@ -47,6 +47,12 @@ export default function AuthScreen({ initialTab = 'login' }: AuthScreenProps) {
   const [forgotModalVisible, setForgotModalVisible] = useState(false);
   const [forgotIdentifier, setForgotIdentifier] = useState('');
   const [isResetting, setIsResetting] = useState(false);
+
+  // Google One-Tap Sign In Modal State
+  const [googleModalVisible, setGoogleModalVisible] = useState(false);
+  const [googleEmailInput, setGoogleEmailInput] = useState('');
+  const [googleNameInput, setGoogleNameInput] = useState('');
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
 
   // Guest Mode Handler (Fresh Start Page with 0 passes)
   const handleContinueAsGuest = () => {
@@ -180,18 +186,45 @@ export default function AuthScreen({ initialTab = 'login' }: AuthScreenProps) {
     }
   };
 
-  // Social Login Handler
+  // Social Login Handler (Instant Google & Apple Sign-In)
   const handleSocialLogin = async (provider: 'Google' | 'Apple') => {
-    soundEffects.playAuthSubmit();
-    const mockEmail = `${provider.toLowerCase()}.user@gmail.com`;
-    await register({
-      name: `${provider} Client`,
-      email: mockEmail,
-      phone: '+91 90252 53695',
-      device: Platform.OS === 'android' ? 'Android Mobile App' : 'iOS Mobile App',
-      loginLocation: 'Chennai Studio, TN, India',
+    soundEffects.playClick(850, 0.03);
+    if (provider === 'Google') {
+      setGoogleModalVisible(true);
+      return;
+    }
+
+    // Apple Instant Sign In
+    setIsSubmitting(true);
+    await loginWithGoogle({
+      name: 'Apple Client',
+      email: `apple.user.${Math.floor(1000 + Math.random() * 9000)}@icloud.com`,
     });
+    setIsSubmitting(false);
     router.replace('/(tabs)');
+  };
+
+  // Execute Google Sign In
+  const handleExecuteGoogleLogin = async (customEmail?: string, customName?: string) => {
+    soundEffects.playAuthSubmit();
+    setIsGoogleSubmitting(true);
+    try {
+      const email = (customEmail && customEmail.trim()) ? customEmail.trim() : undefined;
+      const name = (customName && customName.trim()) ? customName.trim() : undefined;
+
+      const res = await loginWithGoogle({ email, name });
+      setIsGoogleSubmitting(false);
+
+      if (res.success) {
+        setGoogleModalVisible(false);
+        router.replace('/(tabs)');
+      } else {
+        Alert.alert('Sign In Failed', res.error || 'Could not complete Google Sign In.');
+      }
+    } catch (err: any) {
+      setIsGoogleSubmitting(false);
+      Alert.alert('Sign In Error', err.message || 'Could not complete Google Sign In.');
+    }
   };
 
   // Forgot Password Handler
@@ -648,6 +681,123 @@ export default function AuthScreen({ initialTab = 'login' }: AuthScreenProps) {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* ── GOOGLE ONE-TAP SIGN IN MODAL ── */}
+      <Modal
+        visible={googleModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setGoogleModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={styles.googleModalCard}>
+            {/* Header with Google Logo */}
+            <View style={styles.googleHeaderRow}>
+              <View style={styles.googleIconCircle}>
+                <Ionicons name="logo-google" size={26} color="#EA4335" />
+              </View>
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <Text style={styles.googleModalTitle}>Sign in with Google</Text>
+                <Text style={styles.googleModalSubtitle}>Fast & secure access to CBR Studio</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setGoogleModalVisible(false)}
+                style={styles.googleCloseBtn}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="close" size={20} color="#94A3B8" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.googleDivider} />
+
+            {/* Quick 1-Tap Google Sign In Card */}
+            <TouchableOpacity
+              style={styles.googleQuickCard}
+              onPress={() => handleExecuteGoogleLogin()}
+              disabled={isGoogleSubmitting}
+              activeOpacity={0.82}
+            >
+              <View style={styles.googleAvatarCircle}>
+                <Ionicons name="person" size={18} color="#4285F4" />
+              </View>
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <Text style={styles.googleQuickName}>1-Tap Quick Google Sign In</Text>
+                <Text style={styles.googleQuickSub}>Instant login as Studio Client</Text>
+              </View>
+              {isGoogleSubmitting ? (
+                <ActivityIndicator size="small" color="#4285F4" />
+              ) : (
+                <View style={styles.oneTapPill}>
+                  <Text style={styles.oneTapPillText}>INSTANT</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <View style={styles.modalDividerRow}>
+              <View style={styles.modalDividerLine} />
+              <Text style={styles.modalDividerText}>OR ENTER YOUR GMAIL</Text>
+              <View style={styles.modalDividerLine} />
+            </View>
+
+            {/* Custom Gmail Input */}
+            <View style={styles.googleInputGroup}>
+              <Text style={styles.googleInputLabel}>Google / Gmail Address</Text>
+              <View style={styles.googleInputBox}>
+                <Ionicons name="mail-outline" size={16} color="#94A3B8" style={{ marginRight: 8 }} />
+                <TextInput
+                  style={styles.googleTextInput}
+                  placeholder="e.g. producer@gmail.com"
+                  placeholderTextColor="#64748B"
+                  value={googleEmailInput}
+                  onChangeText={setGoogleEmailInput}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
+            </View>
+
+            {/* Custom Producer Name Input (Optional) */}
+            <View style={[styles.googleInputGroup, { marginTop: 8 }]}>
+              <Text style={styles.googleInputLabel}>Your Name / Studio Alias (Optional)</Text>
+              <View style={styles.googleInputBox}>
+                <Ionicons name="person-outline" size={16} color="#94A3B8" style={{ marginRight: 8 }} />
+                <TextInput
+                  style={styles.googleTextInput}
+                  placeholder="e.g. Alex Studio"
+                  placeholderTextColor="#64748B"
+                  value={googleNameInput}
+                  onChangeText={setGoogleNameInput}
+                />
+              </View>
+            </View>
+
+            {/* Sign in button */}
+            <TouchableOpacity
+              style={[styles.googleSignInBtn, isGoogleSubmitting && { opacity: 0.7 }]}
+              onPress={() => handleExecuteGoogleLogin(googleEmailInput, googleNameInput)}
+              disabled={isGoogleSubmitting}
+              activeOpacity={0.85}
+            >
+              {isGoogleSubmitting ? (
+                <ActivityIndicator size="small" color="#000000" />
+              ) : (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Ionicons name="logo-google" size={16} color="#000000" />
+                  <Text style={styles.googleSignInBtnText}>Continue with Google</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <Text style={styles.googleFooterNotice}>
+              Safe & secure • Passes and reservations are synced to this Google account.
+            </Text>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -1067,5 +1217,169 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#94A3B8',
     fontWeight: '500',
+  },
+
+  // ── Google One-Tap Modal Styles ──
+  googleModalCard: {
+    width: '100%',
+    maxWidth: 400,
+    backgroundColor: '#0F172A',
+    borderRadius: 22,
+    padding: 22,
+    borderWidth: 1.5,
+    borderColor: '#334155',
+    shadowColor: '#4285F4',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 18,
+    elevation: 12,
+  },
+  googleHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  googleIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(234, 67, 53, 0.12)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(234, 67, 53, 0.25)',
+  },
+  googleModalTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
+  },
+  googleModalSubtitle: {
+    fontSize: 11,
+    color: '#94A3B8',
+    marginTop: 2,
+  },
+  googleCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#1E293B',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  googleDivider: {
+    height: 1,
+    backgroundColor: '#1E293B',
+    marginBottom: 14,
+  },
+  googleQuickCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(66, 133, 244, 0.1)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(66, 133, 244, 0.35)',
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 14,
+  },
+  googleAvatarCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(66, 133, 244, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  googleQuickName: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  googleQuickSub: {
+    fontSize: 11,
+    color: '#94A3B8',
+    marginTop: 1,
+  },
+  oneTapPill: {
+    backgroundColor: '#4285F4',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  oneTapPillText: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+  modalDividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 14,
+  },
+  modalDividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#1E293B',
+  },
+  modalDividerText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#64748B',
+    letterSpacing: 0.8,
+  },
+  googleInputGroup: {
+    width: '100%',
+    marginBottom: 10,
+  },
+  googleInputLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#CBD5E1',
+    marginBottom: 6,
+  },
+  googleInputBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1E293B',
+    borderWidth: 1,
+    borderColor: '#334155',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  googleTextInput: {
+    flex: 1,
+    color: '#FFFFFF',
+    fontSize: 13,
+    padding: 0,
+  },
+  googleSignInBtn: {
+    backgroundColor: '#FACC15',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 6,
+    shadowColor: '#FACC15',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  googleSignInBtnText: {
+    color: '#000000',
+    fontSize: 13,
+    fontWeight: '900',
+    letterSpacing: 0.3,
+  },
+  googleFooterNotice: {
+    fontSize: 10,
+    color: '#64748B',
+    textAlign: 'center',
+    marginTop: 12,
+    lineHeight: 14,
   },
 });

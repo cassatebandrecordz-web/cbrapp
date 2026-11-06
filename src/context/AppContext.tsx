@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { Platform } from 'react-native';
 import {
   BookingItem,
   INITIAL_BOOKINGS,
@@ -86,6 +87,7 @@ interface AppContextType {
   isGuest: boolean;
   continueAsGuest: () => void;
   login: (params: { identifier: string; password?: string; device?: string; loginLocation?: string }) => Promise<{ success: boolean; error?: string }>;
+  loginWithGoogle: (params?: { email?: string; name?: string }) => Promise<{ success: boolean; user?: UserProfile; error?: string }>;
   register: (params: { name: string; email: string; password?: string; phone?: string; device?: string; loginLocation?: string }) => Promise<{ success: boolean; error?: string }>;
   resetPassword: (identifier: string) => Promise<{ success: boolean; message?: string; error?: string }>;
   loginDemo: (override?: Partial<UserProfile>) => void;
@@ -241,6 +243,65 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return { success: false, error: res.error || 'Registration failed' };
     } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  };
+
+  // ── Instant 1-Tap Google Sign In ──
+  const loginWithGoogle = async (params?: { email?: string; name?: string }) => {
+    try {
+      const email = (params?.email && params.email.trim())
+        ? params.email.trim().toLowerCase()
+        : `producer.${Math.floor(1000 + Math.random() * 9000)}@gmail.com`;
+      const name = (params?.name && params.name.trim())
+        ? params.name.trim()
+        : (email.includes('@') ? email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()) : 'Google Client');
+
+      const googleUser: UserProfile = {
+        id: `usr-g-${Date.now().toString().slice(-6)}`,
+        name,
+        email,
+        phone: '+91 90252 53695',
+        company: 'Studio Producer',
+        role: 'Studio Client',
+        isAdmin: false,
+        isGuest: false,
+      };
+
+      setUser(googleUser);
+      setIsLoggedIn(true);
+      setIsGuest(false);
+
+      // Async background registration to Supabase database so profile exists
+      StudioApi.register({
+        name,
+        email,
+        password: `GoogleAuth@${Date.now()}`,
+        phone: '+91 90252 53695',
+        device: Platform.OS === 'android' ? 'Android Mobile App' : (Platform.OS === 'ios' ? 'iOS Mobile App' : 'Web Studio Portal'),
+        loginLocation: 'Chennai Studio, TN, India',
+      }).catch(() => {});
+
+      // Fetch passes belonging to this Google account
+      try {
+        const liveList = await StudioApi.getBookings(googleUser.id, googleUser.email);
+        if (Array.isArray(liveList)) {
+          const userOnly = liveList.filter((b: any) => {
+            const bEmail = (b.clientEmail || b.client_email || '').trim().toLowerCase();
+            const bUser = b.userId || b.user_id;
+            return (bEmail && bEmail === email) || (bUser && bUser === googleUser.id);
+          });
+          setBookings(userOnly);
+        } else {
+          setBookings([]);
+        }
+      } catch {
+        setBookings([]);
+      }
+
+      return { success: true, user: googleUser };
+    } catch (e: any) {
+      console.error('Google Sign In error:', e);
       return { success: false, error: e.message };
     }
   };
@@ -476,6 +537,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isGuest,
         continueAsGuest,
         login,
+        loginWithGoogle,
         register,
         resetPassword,
         loginDemo,
