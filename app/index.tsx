@@ -229,7 +229,7 @@ export default function InitialEntranceScreen() {
         >
           {/* Full-screen tap surface outside the slider for instant access */}
           <TouchableOpacity
-            style={StyleSheet.absoluteFillObject}
+            style={StyleSheet.absoluteFill}
             onPress={handleEnterHome}
             activeOpacity={1}
           />

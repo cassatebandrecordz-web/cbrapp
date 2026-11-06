@@ -22,6 +22,7 @@ import {
   WorkingDayOption,
 } from '../../src/utils/dateUtils';
 import { StudioApi } from '../../src/services/api';
+import { RazorpayCheckoutButton } from '../../src/components/RazorpayCheckoutButton';
 
 export type DayOption = WorkingDayOption;
 
@@ -411,7 +412,7 @@ export default function SlotBookingScreen() {
         [
           {
             text: 'Confirm Payment & Get Pass',
-            onPress: handleFinalPayment,
+            onPress: () => handleFinalPayment(),
           },
           { text: 'Pay Later / Cancel', style: 'cancel' },
         ]
@@ -431,7 +432,13 @@ export default function SlotBookingScreen() {
     );
   };
 
-  const handleFinalPayment = () => {
+  const handleFinalPayment = (paymentDetails?: {
+    paymentMethod?: string;
+    transactionId?: string;
+    razorpay_order_id?: string;
+    razorpay_payment_id?: string;
+    razorpay_signature?: string;
+  }) => {
     try {
       if (!hasAgreedTerms) {
         Alert.alert(
@@ -448,6 +455,9 @@ export default function SlotBookingScreen() {
         [selectedDayObj.fullDate]: [...(prev[selectedDayObj.fullDate] || []), ...selectedSlots],
       }));
 
+      const chosenMethod = paymentDetails?.paymentMethod || 'UPI Full Payment';
+      const refCode = paymentDetails?.transactionId || paymentDetails?.razorpay_payment_id;
+
       // Post to live backend for permanent multi-device slot locking (Full Payment Auto-Booking)
       const booking = confirmBooking({
         serviceId: 'dubbing',
@@ -458,7 +468,8 @@ export default function SlotBookingScreen() {
         timeSlotLabel: formattedSlotsString,
         totalPrice: totalPrice,
         advanceAmount: totalPrice,
-        paymentMethod: 'UPI Full Payment',
+        paymentMethod: chosenMethod,
+        transactionId: refCode,
         clientName: user?.name || (user?.isGuest ? 'Guest Producer' : 'Studio Client'),
         clientPhone: user?.phone || '+91 90252 53695',
         clientEmail: user?.email || (user?.isGuest ? 'guest@cassate.local' : 'client@cassatebandrecordz.com'),
@@ -501,10 +512,10 @@ export default function SlotBookingScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 28 }]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={{ flexGrow: 1 }}>
+        <View style={{ flexGrow: 1, width: '100%', maxWidth: '100%' }}>
           {/* ================= STEP 1: DATE & TIME SLOTS ================= */}
           {step === 1 && (
-            <View>
+            <View style={{ width: '100%' }}>
               {/* Active Reservation Suite Hero Card */}
               <GlowCard style={styles.studioHeroCard}>
                 <View style={styles.studioHeroRow}>
@@ -533,7 +544,12 @@ export default function SlotBookingScreen() {
                     <Ionicons name="calendar" size={16} color={COLORS.primary} />
                     <Text style={styles.sectionTitle}>1. Select Date</Text>
                   </View>
-                  <Text style={styles.selectedDateBadge}>{selectedDayObj.fullDate}</Text>
+                  <View style={styles.selectedDateBadge}>
+                    <Ionicons name="today-outline" size={12} color="#B45309" />
+                    <Text style={styles.selectedDateBadgeText} numberOfLines={1}>
+                      {selectedDayObj.fullDate}
+                    </Text>
+                  </View>
                 </View>
 
                 {/* Range Badge for 6-Day Monday to Saturday Cycle */}
@@ -931,6 +947,57 @@ export default function SlotBookingScreen() {
                 </TouchableOpacity>
               </GlowCard>
 
+              {/* Razorpay Standard Web Checkout Card */}
+              <GlowCard style={styles.razorpayCard} borderColor="#EAB308">
+                <View style={styles.razorpayCardHeader}>
+                  <View style={styles.razorpayBrandRow}>
+                    <View style={styles.razorpayLogoBox}>
+                      <Ionicons name="card" size={18} color="#0A0A0E" />
+                    </View>
+                    <View style={{ flex: 1, marginLeft: 10 }}>
+                      <View style={styles.razorpayTitleRow}>
+                        <Text style={styles.razorpayCardTitle}>RAZORPAY STANDARD CHECKOUT</Text>
+                        <View style={styles.instantBadge}>
+                          <Text style={styles.instantBadgeText}>INSTANT</Text>
+                        </View>
+                      </View>
+                      <Text style={styles.razorpayCardSub}>
+                        Pay with UPI, Credit/Debit Cards, NetBanking & Wallets
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                <View style={styles.razorpayDivider} />
+
+                <RazorpayCheckoutButton
+                  amount={totalPrice}
+                  clientName={user?.name || (user?.isGuest ? 'Guest Producer' : 'Studio Client')}
+                  clientEmail={user?.email || (user?.isGuest ? 'guest@cassate.local' : 'client@cassatebandrecordz.com')}
+                  clientPhone={user?.phone || '+91 90252 53695'}
+                  buttonText={`Pay ₹${totalPrice.toLocaleString('en-IN')} with Razorpay →`}
+                  disabled={!hasAgreedTerms}
+                  onPaymentSuccess={(paymentRes, verifyRes) => {
+                    handleFinalPayment({
+                      paymentMethod: 'Razorpay Standard Checkout',
+                      transactionId: paymentRes.razorpay_payment_id,
+                      razorpay_order_id: paymentRes.razorpay_order_id,
+                      razorpay_payment_id: paymentRes.razorpay_payment_id,
+                      razorpay_signature: paymentRes.razorpay_signature,
+                    });
+                  }}
+                  onPaymentError={(err) => {
+                    console.error('Razorpay payment error:', err);
+                  }}
+                />
+
+                {!hasAgreedTerms && (
+                  <Text style={styles.razorpayTermsNotice}>
+                    ⚠️ Please agree to the Studio Terms above to enable Razorpay Checkout
+                  </Text>
+                )}
+              </GlowCard>
+
               {/* UPI Direct Payment Card */}
               <GlowCard style={styles.upiOptionsCard} borderColor="#EAB308">
                 <View style={styles.upiCardHeader}>
@@ -1076,7 +1143,7 @@ export default function SlotBookingScreen() {
                       backgroundColor: hasAgreedTerms ? '#059669' : '#6B7280',
                     },
                   ]}
-                  onPress={handleFinalPayment}
+                  onPress={() => handleFinalPayment()}
                   activeOpacity={0.85}
                 >
                   <View style={styles.payBtnContent}>
@@ -1228,6 +1295,7 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
   calendarControlRow: {
+    width: '100%',
     marginBottom: 8,
   },
   calendarHeaderTop: {
@@ -1236,12 +1304,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 6,
     width: '100%',
+    gap: 8,
   },
   calendarSubRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 2,
+    width: '100%',
   },
   weekNavBtn: {
     width: 24,
@@ -1276,6 +1346,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    flexShrink: 0,
   },
   sectionTitle: {
     fontSize: 13,
@@ -1283,16 +1354,21 @@ const styles = StyleSheet.create({
     color: '#111827',
   },
   selectedDateBadge: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#B45309',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     backgroundColor: '#FEF3C7',
     paddingHorizontal: 8,
-    paddingVertical: 2.5,
+    paddingVertical: 3,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#FDE68A',
-    flexShrink: 0,
+    flexShrink: 1,
+  },
+  selectedDateBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#B45309',
   },
   sevenDaysContainer: {
     flexDirection: 'row',
@@ -2041,6 +2117,73 @@ const styles = StyleSheet.create({
     borderColor: '#EAB308',
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
+  },
+  razorpayCard: {
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: '#EAB308',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+  },
+  razorpayCardHeader: {
+    marginBottom: 10,
+  },
+  razorpayBrandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  razorpayLogoBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#FEF08A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#EAB308',
+  },
+  razorpayTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  razorpayCardTitle: {
+    fontSize: 13,
+    fontWeight: '900',
+    color: '#111827',
+    letterSpacing: 0.5,
+  },
+  instantBadge: {
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  instantBadgeText: {
+    fontSize: 8.5,
+    fontWeight: '800',
+    color: '#059669',
+    letterSpacing: 0.3,
+  },
+  razorpayCardSub: {
+    fontSize: 11,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  razorpayDivider: {
+    height: 1,
+    backgroundColor: '#F3F4F6',
+    marginBottom: 12,
+  },
+  razorpayTermsNotice: {
+    color: '#D97706',
+    fontSize: 10.5,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginTop: 8,
   },
   disclaimerHeaderRow: {
     flexDirection: 'row',

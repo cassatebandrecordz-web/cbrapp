@@ -40,6 +40,7 @@ export interface CreateBookingPayload {
   totalPrice: number;
   advanceAmount: number;
   paymentMethod: string;
+  transactionId?: string;
   upiRefId?: string;
   clientName?: string;
   clientPhone?: string;

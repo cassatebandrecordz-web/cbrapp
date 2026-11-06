@@ -4,6 +4,49 @@
  */
 const http = require('http');
 const url = require('url');
+const fs = require('fs');
+const pathModule = require('path');
+const crypto = require('crypto');
+
+// Load environment variables from .env
+function loadEnv() {
+  try {
+    const envPath = pathModule.resolve(__dirname, '../.env');
+    if (fs.existsSync(envPath)) {
+      const content = fs.readFileSync(envPath, 'utf8');
+      content.split('\n').forEach((line) => {
+        const trimmed = line.trim();
+        if (trimmed && !trimmed.startsWith('#')) {
+          const idx = trimmed.indexOf('=');
+          if (idx !== -1) {
+            const key = trimmed.substring(0, idx).trim();
+            const val = trimmed.substring(idx + 1).trim();
+            if (!process.env[key]) {
+              process.env[key] = val;
+            }
+          }
+        }
+      });
+    }
+  } catch (e) {
+    // ignore
+  }
+}
+loadEnv();
+
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TwvwNefKNKM7Db';
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'I9H4NEhAuvnMSKgzxN7M6hnj';
+
+let razorpay = null;
+try {
+  const Razorpay = require('razorpay');
+  razorpay = new Razorpay({
+    key_id: RAZORPAY_KEY_ID,
+    key_secret: RAZORPAY_KEY_SECRET,
+  });
+} catch (e) {
+  console.warn('[Razorpay SDK] Loaded fallback:', e.message);
+}
 
 const PORT = process.env.PORT || 5001;
 
@@ -349,6 +392,153 @@ const server = http.createServer(async (req, res) => {
         occupancyRate: '85%',
         recentBookings: list.slice(0, 5),
       });
+    }
+
+    // ── 9. POST /api/create-order (Razorpay Standard Web Checkout) ──
+    if ((path === '/create-order' || path === '/api/create-order') && method === 'POST') {
+      const body = await parseBody(req);
+      const { amount, currency, receipt, notes } = body;
+
+      // Validate amount >= 100 paise (₹1)
+      const parsedAmount = Math.round(Number(amount));
+      if (!amount || isNaN(parsedAmount) || parsedAmount < 100) {
+        return sendJson(res, {
+          success: false,
+          error: 'Invalid amount. Minimum amount is 100 paise (₹1).',
+        }, 400);
+      }
+
+      // Handle auth failures / missing credentials
+      if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+        return sendJson(res, {
+          success: false,
+          error: 'Razorpay authentication failed: Missing or invalid API credentials',
+        }, 401);
+      }
+
+      try {
+        let order;
+        if (razorpay) {
+          order = await razorpay.orders.create({
+            amount: parsedAmount,
+            currency: currency || 'INR',
+            receipt: receipt || `rcpt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+            notes: notes || {},
+          });
+        } else {
+          // Direct HTTPS call fallback
+          const authHeader = 'Basic ' + Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString('base64');
+          const apiRes = await fetch('https://api.razorpay.com/v1/orders', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': authHeader,
+            },
+            body: JSON.stringify({
+              amount: parsedAmount,
+              currency: currency || 'INR',
+              receipt: receipt || `rcpt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+              notes: notes || {},
+            }),
+          });
+          const data = await apiRes.json();
+          if (!apiRes.ok) {
+            return sendJson(res, {
+              success: false,
+              error: data.error?.description || 'Razorpay order creation failed',
+              details: data,
+            }, apiRes.status === 401 ? 401 : 500);
+          }
+          order = data;
+        }
+
+        return sendJson(res, {
+          success: true,
+          order_id: order.id,
+          id: order.id,
+          amount: order.amount,
+          currency: order.currency,
+          receipt: order.receipt,
+          status: order.status,
+          key_id: RAZORPAY_KEY_ID,
+        }, 200);
+      } catch (err) {
+        console.error('[Razorpay Error] Order creation error:', err);
+        const statusCode = err.statusCode === 401 ? 401 : 500;
+        return sendJson(res, {
+          success: false,
+          error: err.error?.description || err.message || 'Razorpay order creation failed',
+          details: err,
+        }, statusCode);
+      }
+    }
+
+    // ── 10. POST /api/verify-payment (Razorpay Signature Verification) ──
+    if ((path === '/verify-payment' || path === '/api/verify-payment') && method === 'POST') {
+      const body = await parseBody(req);
+      const orderId = body.razorpay_order_id || body.order_id;
+      const paymentId = body.razorpay_payment_id || body.payment_id;
+      const signature = body.razorpay_signature || body.signature;
+
+      // Missing fields: return 400
+      if (!orderId || !paymentId || !signature) {
+        return sendJson(res, {
+          success: false,
+          error: 'Missing required signature verification fields (order_id, payment_id, signature)',
+        }, 400);
+      }
+
+      if (!RAZORPAY_KEY_SECRET) {
+        return sendJson(res, {
+          success: false,
+          error: 'Razorpay authentication failed: Missing secret key',
+        }, 401);
+      }
+
+      // Algorithm: HMAC-SHA256(order_id + "|" + payment_id, KEY_SECRET)
+      const dataToSign = `${orderId}|${paymentId}`;
+      const generatedSignature = crypto
+        .createHmac('sha256', RAZORPAY_KEY_SECRET)
+        .update(dataToSign)
+        .digest('hex');
+
+      // Compare generated signature with razorpay_signature
+      let isMatch = false;
+      try {
+        if (generatedSignature.length === signature.length) {
+          isMatch = crypto.timingSafeEqual(
+            Buffer.from(generatedSignature, 'utf8'),
+            Buffer.from(signature, 'utf8')
+          );
+        }
+      } catch (err) {
+        isMatch = false;
+      }
+
+      // Signature mismatch: return 400, do NOT mark as paid
+      if (!isMatch) {
+        return sendJson(res, {
+          success: false,
+          error: 'Payment verification failed: Signature mismatch',
+        }, 400);
+      }
+
+      // If valid and bookingId provided, mark booking as paid
+      if (body.bookingId && db.bookings[body.bookingId]) {
+        db.bookings[body.bookingId].paymentStatus = 'PAID_IN_FULL';
+        db.bookings[body.bookingId].paymentMethod = 'Razorpay Standard Checkout';
+        db.bookings[body.bookingId].razorpayPaymentId = paymentId;
+        db.bookings[body.bookingId].razorpayOrderId = orderId;
+        db.bookings[body.bookingId].status = 'CONFIRMED';
+      }
+
+      return sendJson(res, {
+        success: true,
+        message: 'Payment verified successfully',
+        order_id: orderId,
+        payment_id: paymentId,
+        signature_verified: true,
+      }, 200);
     }
 
     return sendJson(res, { error: 'Endpoint not found', path }, 404);

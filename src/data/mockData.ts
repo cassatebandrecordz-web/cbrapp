@@ -44,12 +44,17 @@ export interface BookingItem {
   studioName: string;
   date: string;
   timeSlot: string;
+  timeSlots?: string[];
   durationHours: number;
   studioCharges: number;
   gstAmount: number;
   totalPrice: number;
   advanceAmount: number;
   paymentMethod: string;
+  transactionId?: string;
+  clientName?: string;
+  clientPhone?: string;
+  clientEmail?: string;
   status: 'Confirmed' | 'Completed' | 'In Session' | 'Rescheduled';
   notes?: string;
   createdAt: string;

@@ -1,5 +1,9 @@
 import type { Config, Context } from "@netlify/functions";
 import { getStore } from "@netlify/blobs";
+import crypto from "node:crypto";
+
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_TwvwNefKNKM7Db";
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "I9H4NEhAuvnMSKgzxN7M6hnj";
 
 // ── In-Memory / Fallback Store for Local Dev & Resiliency ──
 interface AppDataStore {
@@ -160,7 +164,7 @@ export default async (req: Request, context: Context) => {
       const body = await req.json();
       const { date, slots, userId } = body;
 
-      if (!date || !slots || !Array.now) {
+      if (!date || !slots || !Array.isArray(slots)) {
         return jsonResponse({ error: "Missing required fields" }, 400);
       }
 
@@ -418,6 +422,144 @@ export default async (req: Request, context: Context) => {
         totalAdvanceCollected: totalAdvance,
         occupancyRate: "82%",
         recentBookings: list.slice(0, 5),
+      });
+    }
+
+    // ── 9. POST /api/create-order (Razorpay Standard Web Checkout) ──
+    if ((path === "/create-order" || path === "/api/create-order") && method === "POST") {
+      const body = await req.json();
+      const { amount, currency, receipt, notes } = body;
+
+      // Validate amount >= 100 paise (₹1)
+      const parsedAmount = Math.round(Number(amount));
+      if (!amount || isNaN(parsedAmount) || parsedAmount < 100) {
+        return jsonResponse(
+          { success: false, error: "Invalid amount. Minimum amount is 100 paise (₹1)." },
+          400
+        );
+      }
+
+      // Handle auth failures / missing credentials
+      if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+        return jsonResponse(
+          { success: false, error: "Razorpay authentication failed: Missing or invalid API credentials" },
+          401
+        );
+      }
+
+      try {
+        const authHeader = "Basic " + Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString("base64");
+        const apiRes = await fetch("https://api.razorpay.com/v1/orders", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: authHeader,
+          },
+          body: JSON.stringify({
+            amount: parsedAmount,
+            currency: currency || "INR",
+            receipt: receipt || `rcpt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+            notes: notes || {},
+          }),
+        });
+
+        const data = await apiRes.json();
+        if (!apiRes.ok) {
+          const status = apiRes.status === 401 ? 401 : 500;
+          return jsonResponse(
+            { success: false, error: data?.error?.description || "Razorpay order creation failed", details: data },
+            status
+          );
+        }
+
+        return jsonResponse({
+          success: true,
+          order_id: data.id,
+          id: data.id,
+          amount: data.amount,
+          currency: data.currency,
+          receipt: data.receipt,
+          status: data.status,
+          key_id: RAZORPAY_KEY_ID,
+        });
+      } catch (err: any) {
+        console.error("[Razorpay Error] Order creation error:", err);
+        return jsonResponse(
+          { success: false, error: err?.message || "Razorpay order creation failed" },
+          500
+        );
+      }
+    }
+
+    // ── 10. POST /api/verify-payment (Razorpay Signature Verification) ──
+    if ((path === "/verify-payment" || path === "/api/verify-payment") && method === "POST") {
+      const body = await req.json();
+      const orderId = body.razorpay_order_id || body.order_id;
+      const paymentId = body.razorpay_payment_id || body.payment_id;
+      const signature = body.razorpay_signature || body.signature;
+
+      // Missing fields: return 400
+      if (!orderId || !paymentId || !signature) {
+        return jsonResponse(
+          { success: false, error: "Missing required signature verification fields (order_id, payment_id, signature)" },
+          400
+        );
+      }
+
+      if (!RAZORPAY_KEY_SECRET) {
+        return jsonResponse(
+          { success: false, error: "Razorpay authentication failed: Missing secret key" },
+          401
+        );
+      }
+
+      // Algorithm: HMAC-SHA256(order_id + "|" + payment_id, KEY_SECRET)
+      const dataToSign = `${orderId}|${paymentId}`;
+      const generatedSignature = crypto
+        .createHmac("sha256", RAZORPAY_KEY_SECRET)
+        .update(dataToSign)
+        .digest("hex");
+
+      // Compare generated signature with razorpay_signature
+      let isMatch = false;
+      try {
+        if (generatedSignature.length === signature.length) {
+          isMatch = crypto.timingSafeEqual(
+            Buffer.from(generatedSignature, "utf8"),
+            Buffer.from(signature, "utf8")
+          );
+        }
+      } catch {
+        isMatch = false;
+      }
+
+      // Signature mismatch: return 400, do NOT mark as paid
+      if (!isMatch) {
+        return jsonResponse(
+          { success: false, error: "Payment verification failed: Signature mismatch" },
+          400
+        );
+      }
+
+      // If valid and bookingId provided, update stored booking
+      if (body.bookingId) {
+        const bookingsMap = await readStoreKey<Record<string, any>>("bookings", {});
+        if (bookingsMap[body.bookingId]) {
+          bookingsMap[body.bookingId].paymentStatus = "PAID_IN_FULL";
+          bookingsMap[body.bookingId].paymentMethod = "Razorpay Standard Checkout";
+          bookingsMap[body.bookingId].razorpayPaymentId = paymentId;
+          bookingsMap[body.bookingId].razorpayOrderId = orderId;
+          bookingsMap[body.bookingId].status = "CONFIRMED";
+          await writeStoreKey("bookings", bookingsMap);
+        }
+      }
+
+      return jsonResponse({
+        success: true,
+        message: "Payment verified successfully",
+        order_id: orderId,
+        payment_id: paymentId,
+        signature_verified: true,
       });
     }
 

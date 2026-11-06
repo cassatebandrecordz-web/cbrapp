@@ -2646,7 +2646,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   sidebarBottomGradientOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(10, 10, 15, 0.35)',
   },
   sidebarItem: {
@@ -3082,7 +3082,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   carouselOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(10, 10, 15, 0.75)',
     padding: 12,
     justifyContent: 'center',
@@ -3460,7 +3460,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   mobilePhoneOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0,0,0,0.7)',
     padding: 14,
     justifyContent: 'center',
