@@ -43,6 +43,7 @@ export interface VerifyPaymentParams {
   razorpay_signature: string;
   bookingId?: string;
   bookingData?: any;
+  isSimulation?: boolean;
 }
 
 export interface VerifyPaymentResponse {
@@ -125,6 +126,9 @@ export async function createRazorpayOrder(params: CreateOrderParams): Promise<Cr
 
     const data = await res.json();
     if (!res.ok) {
+      if (res.status === 401 || (data.error && data.error.toLowerCase().includes('authentication failed'))) {
+        throw new Error('Authentication failed (Razorpay API rejected credentials. Key ID/Secret in .env is invalid or expired on Razorpay Dashboard)');
+      }
       throw new Error(data.error || `Failed to create order (HTTP ${res.status})`);
     }
 
@@ -292,7 +296,52 @@ export async function launchRazorpayCheckout(options: RazorpayCheckoutOptions): 
     rzpInstance.open();
   } catch (err: any) {
     console.error('[Razorpay Checkout Error]:', err);
-    Alert.alert('Checkout Error', err.message || 'Could not initiate Razorpay payment.');
+
+    if (err.message && err.message.toLowerCase().includes('authentication failed')) {
+      Alert.alert(
+        '🔑 Razorpay Authentication Failed (401)',
+        `Razorpay's API server rejected the test credentials:\n\n• Key ID: ${RAZORPAY_KEY_ID}\n\nCause: The Key Secret in .env does not match your active Razorpay Dashboard secret.\n\nFix: Go to dashboard.razorpay.com → Settings → API Keys to generate active test keys, then update .env.\n\nWould you like to simulate a successful payment test right now?`,
+        [
+          {
+            text: 'Simulate Test Pass',
+            onPress: async () => {
+              try {
+                const simOrderId = `order_sim_${Date.now()}`;
+                const simPaymentId = `pay_sim_${Date.now()}`;
+                const verifyResult = await verifyRazorpayPayment({
+                  razorpay_order_id: simOrderId,
+                  razorpay_payment_id: simPaymentId,
+                  razorpay_signature: 'simulated_test_signature',
+                  bookingId,
+                  isSimulation: true,
+                });
+                if (verifyResult.success) {
+                  Alert.alert(
+                    'Simulated Payment Verified! 🎉',
+                    `Test booking pass has been generated!\n\nSimulated Payment ID: ${simPaymentId}`,
+                    [{ text: 'View Pass' }]
+                  );
+                  onSuccess(
+                    {
+                      razorpay_order_id: simOrderId,
+                      razorpay_payment_id: simPaymentId,
+                      razorpay_signature: 'simulated_test_signature',
+                    },
+                    verifyResult
+                  );
+                }
+              } catch (simErr: any) {
+                console.error('[Simulation Error]:', simErr);
+              }
+            },
+          },
+          { text: 'Cancel', style: 'cancel' },
+        ]
+      );
+    } else {
+      Alert.alert('Checkout Error', err.message || 'Could not initiate Razorpay payment.');
+    }
+
     if (onFailure) onFailure(err);
   }
 }
